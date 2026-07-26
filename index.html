@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+  <title>MD Chat Pro</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Modern, responsive, production-ready MD Chat Pro built with HTML5, CSS3, Vanilla JS, and PWA capabilities.">
+  <meta name="theme-color" content="#00a884">
+  
+  <!-- Web Manifest & Icons -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3670/3670051.png">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Application Styling -->
+  <link rel="stylesheet" href="./css/styles.css">
+
+  <!-- FIREBASE WEB SDK LIBRARIES -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+  <!-- WEBSITE ENTER SPLASH SCREEN LOGO ANIMATION -->
+  <div id="splash-screen" class="splash-screen">
+    <div class="splash-content">
+      <div class="splash-logo">
+        <i class="fas fa-comment-dots"></i>
+      </div>
+      <div class="splash-progress-track">
+        <div class="splash-progress-fill"></div>
+      </div>
+      <h2 class="splash-title">MD Chat Pro</h2>
+      <div class="splash-security">
+        <i class="fas fa-lock"></i> End-to-end encrypted
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN SPA CONTAINER -->
+  <div id="app-container">
+
+    <!-- GLOBAL LEFT NAVIGATION RAIL -->
+    <nav class="nav-rail" id="nav-rail">
+      <div class="nav-top">
+        <button class="nav-btn nav-tab-btn active" data-tab="chats" id="nav-chats-btn" title="Chats">
+          <i class="fas fa-comment-alt"></i>
+          <span class="nav-btn-label">Chats</span>
+        </button>
+        <button class="nav-btn nav-tab-btn" data-tab="status" id="nav-status-btn" title="Status Updates">
+          <i class="fas fa-circle-notch"></i>
+          <span class="nav-btn-label">Status</span>
+        </button>
+        <button class="nav-btn nav-tab-btn" data-tab="contacts" id="nav-contacts-btn" title="Contacts / Friend List">
+          <i class="fas fa-address-book"></i>
+          <span class="nav-btn-label">Contacts</span>
+        </button>
+      </div>
+
+      <div class="nav-bottom">
+        <!-- Profile Image directly opens Settings View -->
+        <button class="nav-btn user-avatar-btn nav-tab-btn" data-tab="settings" id="nav-profile-btn" title="Settings & Profile">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" class="nav-user-avatar" id="global-nav-avatar" alt="User Avatar">
+          <span class="nav-btn-label">Settings</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- SIDEBAR PANEL -->
+    <aside class="sidebar" id="sidebar-panel">
+      <!-- Sidebar Header -->
+      <header class="sidebar-header" style="position: relative;">
+        <h1 class="sidebar-title" id="sidebar-main-title">Chats</h1>
+        <div class="header-actions">
+          <button class="icon-btn" id="add-contact-btn" title="Add Contact">
+            <i class="fas fa-user-plus"></i>
+          </button>
+          <button class="icon-btn" id="create-group-btn" title="New Group">
+            <i class="fas fa-users-cog"></i>
+          </button>
+          <button class="icon-btn" id="sidebar-menu-btn" title="Menu">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+        </div>
+
+        <!-- SIDEBAR DROPDOWN MENU -->
+        <div class="sidebar-dropdown hidden" id="sidebar-dropdown-menu">
+          <div class="dropdown-item" id="dropdown-new-contact">
+            <i class="fas fa-user-plus"></i>
+            <span>New Contact</span>
+          </div>
+          <div class="dropdown-item" id="dropdown-new-group">
+            <i class="fas fa-users"></i>
+            <span>New Group</span>
+          </div>
+          <div class="dropdown-item" id="dropdown-status">
+            <i class="fas fa-circle-notch"></i>
+            <span>Status Stories</span>
+          </div>
+          <div class="dropdown-item" id="dropdown-settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </div>
+          <div class="dropdown-item" id="dropdown-logout" style="color: #ef4444; border-top: 1px solid var(--border-color);">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Log Out</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Search Bar -->
+      <div class="search-box">
+        <div class="search-input-wrapper">
+          <i class="fas fa-search"></i>
+          <input type="text" id="sidebar-search-input" placeholder="Search chats, contacts or messages...">
+        </div>
+      </div>
+
+      <!-- Views Container -->
+      <div class="sidebar-content">
+        <!-- 1. CHATS VIEW -->
+        <div class="sidebar-view" id="view-chats">
+          <div class="list-container" id="chats-list-container">
+            <!-- Dynamic chats list rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 2. CONTACTS VIEW -->
+        <div class="sidebar-view hidden" id="view-contacts">
+          <div class="list-container" id="contacts-list-container">
+            <!-- Dynamic contacts list rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 3. GROUPS VIEW -->
+        <div class="sidebar-view hidden" id="view-groups">
+          <div class="list-container" id="groups-list-container">
+            <!-- Dynamic groups list rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 4. AUTHENTIC WHATSAPP STATUS VIEW -->
+        <div class="sidebar-view hidden" id="view-status">
+          <!-- My Status Top Bar -->
+          <div class="list-item" id="my-status-card" style="border-bottom: 1px solid var(--border-color); cursor: pointer;">
+            <div class="status-ring-container" id="my-status-ring-box" title="Click to view status">
+              <div class="status-avatar-inner">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" id="status-my-avatar" alt="My Avatar">
+              </div>
+              <span class="my-status-add-badge"><i class="fas fa-plus"></i></span>
+            </div>
+            <div class="item-info">
+              <div class="item-top-row">
+                <span class="item-name">My status</span>
+              </div>
+              <div class="item-bottom-row">
+                <span class="item-preview" style="color: var(--text-secondary);" id="my-status-subtext">Tap to add status update</span>
+              </div>
+            </div>
+            <div class="my-status-actions" id="my-status-actions">
+              <button type="button" class="status-action-btn" id="my-status-view-btn" title="View My Status"><i class="fas fa-eye"></i></button>
+              <button type="button" class="status-action-btn" id="my-status-add-btn" title="Add / Edit Status"><i class="fas fa-pen"></i></button>
+              <button type="button" class="status-action-btn delete-btn" id="my-status-delete-btn" title="Delete My Status"><i class="fas fa-trash-alt"></i></button>
+            </div>
+          </div>
+
+          <!-- Section Divider Header -->
+          <div style="padding: 14px 16px 8px 16px; font-size: 12px; font-weight: 600; color: var(--brand-green); text-transform: uppercase;">
+            Recent updates
+          </div>
+
+          <div class="list-container" id="status-list-container">
+            <!-- Dynamic status stories list rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 6. REAL WHATSAPP WEB SETTINGS VIEW -->
+        <div class="sidebar-view hidden" id="view-settings">
+          <!-- Profile Card Header with Direct Edit Options -->
+          <div class="settings-profile-card" id="settings-profile-header" title="Click to view & edit profile details">
+            <div class="settings-avatar-large" style="position: relative;">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" id="settings-user-avatar" alt="Avatar">
+              <div style="position: absolute; bottom: 0; right: 0; background: var(--brand-green); color: #fff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 1.5px solid #fff;">
+                <i class="fas fa-camera"></i>
+              </div>
+            </div>
+            <div class="settings-user-info" style="flex: 1;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span class="settings-user-name" id="settings-user-name">My Account</span>
+                <button type="button" class="btn-secondary" id="edit-profile-pencil" title="Edit Name, Photo & Bio" style="padding: 4px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border-radius: 6px; background: rgba(0, 128, 105, 0.12); color: var(--brand-green); border: none; font-weight: 600;">
+                  <i class="fas fa-pen"></i> Edit Profile
+                </button>
+              </div>
+              <span class="settings-user-bio" id="settings-user-bio">Hey there! I am using MD Chat Pro.</span>
+            </div>
+          </div>
+
+          <!-- Settings Menu Items -->
+          <div class="settings-menu-list">
+            <!-- Notifications -->
+            <div class="settings-menu-item" id="setting-menu-notif">
+              <i class="fas fa-bell settings-menu-icon"></i>
+              <span>Notifications</span>
+            </div>
+            <div class="settings-sub-panel hidden" id="sub-panel-notif">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span>Message Sound Alerts</span>
+                <input type="checkbox" id="sound-toggle-switch" checked>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+                <span>Desktop Push Notifications</span>
+                <input type="checkbox" id="notif-toggle-switch" checked>
+              </div>
+
+              <!-- Alert Style & Color Test Palette -->
+              <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-palette" style="color: var(--brand-green);"></i> Alert Style & Color Test
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <button type="button" class="btn-secondary" onclick="showToastAlert('Operation completed successfully!', 'success')" style="padding: 6px 10px; font-size: 12px; border-left: 3px solid #00a884; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-check-circle" style="color: #00a884;"></i> Success
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="showToastAlert('Connection or action failed!', 'error')" style="padding: 6px 10px; font-size: 12px; border-left: 3px solid #ef4444; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i> Error
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="showToastAlert('Status update was deleted.', 'warning')" style="padding: 6px 10px; font-size: 12px; border-left: 3px solid #f59e0b; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> Warning
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="showToastAlert('Sync notice updated.', 'info')" style="padding: 6px 10px; font-size: 12px; border-left: 3px solid #3b82f6; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-info-circle" style="color: #3b82f6;"></i> Info
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Privacy -->
+            <div class="settings-menu-item" id="setting-menu-privacy">
+              <i class="fas fa-lock settings-menu-icon"></i>
+              <span>Privacy</span>
+            </div>
+            <div class="settings-sub-panel hidden" id="sub-panel-privacy">
+              <div class="form-group">
+                <label>Last Seen Visibility</label>
+                <select id="privacy-last-seen" class="form-control">
+                  <option value="everyone">Everyone</option>
+                  <option value="contacts">My Contacts</option>
+                  <option value="nobody">Nobody</option>
+                </select>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span>Read Receipts</span>
+                <input type="checkbox" id="privacy-read-receipts" checked>
+              </div>
+            </div>
+
+            <!-- Theme & Chat Wallpaper -->
+            <div class="settings-menu-item" id="setting-menu-chats">
+              <i class="fas fa-paint-brush settings-menu-icon"></i>
+              <span>Chats & Wallpaper</span>
+            </div>
+            <div class="settings-sub-panel hidden" id="sub-panel-chats">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span>Light Theme Mode</span>
+                <input type="checkbox" id="theme-toggle-switch" checked>
+              </div>
+              <div class="form-group" style="margin-top: 6px;">
+                <label>Chat Wallpaper</label>
+                <select id="wallpaper-select" class="form-control">
+                  <option value="default">Classic Pattern</option>
+                  <option value="doodle">MD Chat Doodle Wallpaper</option>
+                  <option value="emerald">Emerald Dark Solid</option>
+                  <option value="blue">Midnight Blue Solid</option>
+                </select>
+              </div>
+
+              <!-- All Text & Icon Accent Color Palette Changer -->
+              <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color);">
+                <label style="font-size: 12.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-palette" style="color: var(--brand-green);"></i> All Text & Icon Accent Color Theme
+                </label>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px;" id="theme-accent-swatches">
+                  <button type="button" class="color-accent-btn active" data-color="green" style="width: 30px; height: 30px; border-radius: 50%; background: #008069; border: 2.5px solid #ffffff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" title="Emerald Green"></button>
+                  <button type="button" class="color-accent-btn" data-color="blue" style="width: 30px; height: 30px; border-radius: 50%; background: #0284c7; border: 2px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" title="Midnight Blue"></button>
+                  <button type="button" class="color-accent-btn" data-color="crimson" style="width: 30px; height: 30px; border-radius: 50%; background: #dc2626; border: 2px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" title="Sunset Crimson"></button>
+                  <button type="button" class="color-accent-btn" data-color="purple" style="width: 30px; height: 30px; border-radius: 50%; background: #7c3aed; border: 2px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" title="Royal Violet"></button>
+                  <button type="button" class="color-accent-btn" data-color="amber" style="width: 30px; height: 30px; border-radius: 50%; background: #d97706; border: 2px solid transparent; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" title="Amber Gold"></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Account Security & Sync -->
+            <div class="settings-menu-item" id="setting-menu-security">
+              <i class="fas fa-shield-alt settings-menu-icon"></i>
+              <span>Account Security & Sync</span>
+            </div>
+            <div class="settings-sub-panel hidden" id="sub-panel-security">
+              <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                Project: <code style="color: var(--brand-accent);">chat-mk-f1fc4</code><br>
+                Google Auth & Cloud Storage connected.
+              </p>
+              <div style="font-size: 12px; color: var(--brand-green); font-family: monospace; margin-bottom: 8px;" id="firebase-sync-status">
+                <i class="fas fa-cloud"></i> Live Status: Connected
+              </div>
+              <div style="padding: 8px 10px; background: rgba(0, 168, 132, 0.1); border-left: 3px solid var(--brand-green); border-radius: 4px; font-size: 11.5px; margin-top: 8px; color: var(--text-primary);">
+                <div style="font-weight: 600; margin-bottom: 4px; color: var(--brand-green);"><i class="fas fa-user-lock"></i> Data Access Policy</div>
+                <ul style="margin: 0; padding-left: 16px; line-height: 1.4;">
+                  <li><strong>New Contacts:</strong> Private access restricted only to user path (<code>users/{uid}/contacts</code>).</li>
+                  <li><strong>New Groups:</strong> Restricted member access (<code>members</code> array contains <code>auth.uid</code>).</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Keyboard Shortcuts -->
+            <div class="settings-menu-item" id="setting-menu-shortcuts">
+              <i class="fas fa-keyboard settings-menu-icon"></i>
+              <span>Keyboard Shortcuts</span>
+            </div>
+            <div class="settings-sub-panel hidden" id="sub-panel-shortcuts">
+              <div style="font-size: 13px; font-weight: 600; color: var(--brand-green); margin-bottom: 6px;">
+                <i class="fas fa-keyboard"></i> Active Keyboard Shortcuts
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border-subtle);">
+                  <span>New Contact / Chat</span>
+                  <kbd style="background: var(--bg-panel); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color); font-family: monospace;">Ctrl + N</kbd>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border-subtle);">
+                  <span>Search Messages</span>
+                  <kbd style="background: var(--bg-panel); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color); font-family: monospace;">Ctrl + /</kbd>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border-subtle);">
+                  <span>Open Settings</span>
+                  <kbd style="background: var(--bg-panel); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color); font-family: monospace;">Ctrl + S</kbd>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+                  <span>Close Window / Modal</span>
+                  <kbd style="background: var(--bg-panel); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color); font-family: monospace;">Escape</kbd>
+                </div>
+              </div>
+            </div>
+
+            <!-- Help & Support -->
+            <div class="settings-menu-item" id="setting-menu-help">
+              <i class="fas fa-question-circle settings-menu-icon"></i>
+              <span>Help & Support</span>
+            </div>
+            <div class="settings-sub-panel hidden" id="sub-panel-help">
+              <div style="font-size: 13px; font-weight: 600; color: var(--brand-green); margin-bottom: 6px;">
+                <i class="fas fa-headset"></i> Help & Support Center
+              </div>
+              <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
+                MD Chat Pro v2.4.0 Live. Encrypted cloud chat and real-time sync active.
+              </p>
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; margin-top: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <i class="fas fa-check-circle" style="color: var(--brand-green);"></i>
+                  <span>End-to-End Encrypted Cloud Messaging</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <i class="fas fa-check-circle" style="color: var(--brand-green);"></i>
+                  <span>PWA & Voice Call Capability Supported</span>
+                </div>
+              </div>
+              <button type="button" class="btn-primary" id="help-contact-support-btn" style="margin-top: 10px; padding: 8px 12px; font-size: 12px; width: 100%;">
+                <i class="fas fa-envelope" style="margin-right: 6px;"></i> Contact Support / Report Issue
+              </button>
+            </div>
+
+            <!-- Log Out Account -->
+            <div class="settings-menu-item" id="setting-menu-logout" style="color: #ef4444; border-top: 1px solid var(--border-color); margin-top: 8px;">
+              <i class="fas fa-sign-out-alt settings-menu-icon" style="color: #ef4444;"></i>
+              <span style="font-weight: 600;">Log Out Account</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT WINDOW CONTAINER -->
+    <main class="chat-window" id="chat-window-pane">
+      <!-- Empty Default State -->
+      <div class="empty-chat-state" id="empty-chat-state">
+        <img src="https://cdni.iconscout.com/illustration/premium/thumb/whatsapp-chat-illustration-download-in-svg-png-gif-file-formats--messaging-app-social-media-communication-communication-pack-network-illustrations-5211116.png?f=webp&w=512" alt="MD Chat Pro Illustration">
+        <h2 class="empty-chat-title">MD Chat Pro</h2>
+        <p class="empty-chat-subtitle">Send and receive real-time messages, status updates, voice notes, and group chats without keeping your phone online.</p>
+        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+          <i class="fas fa-lock"></i> End-to-End User-to-User Encryption
+        </div>
+      </div>
+
+      <!-- Active Chat View (Hidden when no chat selected) -->
+      <div id="active-chat-content" class="hidden" style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+        <!-- Chat Header -->
+        <header class="chat-header">
+          <div class="chat-user-details" id="chat-header-details" style="cursor: pointer;" title="Click to view Contact Profile Info & Media">
+            <button class="icon-btn hidden" id="mobile-chat-back"><i class="fas fa-arrow-left"></i></button>
+            <div class="chat-avatar">
+              <img src="" id="chat-header-avatar" alt="Avatar">
+            </div>
+            <div class="chat-user-meta">
+              <span class="chat-title" id="chat-header-title">Contact Name</span>
+              <span class="chat-subtitle" id="chat-header-subtitle">Online</span>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn" id="header-search-btn" title="Search Messages"><i class="fas fa-search"></i></button>
+            <button class="icon-btn" id="header-call-btn" title="Voice Call"><i class="fas fa-phone-alt"></i></button>
+            <button class="icon-btn" id="header-video-btn" title="Video Call"><i class="fas fa-video"></i></button>
+            <button class="icon-btn" id="header-delete-btn" title="Delete Contact / Chat" style="color: #ef4444;"><i class="fas fa-trash-alt"></i></button>
+          </div>
+        </header>
+
+        <!-- Message Stream -->
+        <div class="messages-container" id="messages-container">
+          <!-- Dynamic Message Bubbles rendered via JS -->
+        </div>
+
+        <!-- EMOJI PICKER POPOVER -->
+        <div class="emoji-popover hidden" id="emoji-popover">
+          <div class="emoji-grid">
+            <span class="emoji-item">😀</span><span class="emoji-item">😂</span><span class="emoji-item">😍</span>
+            <span class="emoji-item">😎</span><span class="emoji-item">👍</span><span class="emoji-item">❤️</span>
+            <span class="emoji-item">🔥</span><span class="emoji-item">🎉</span><span class="emoji-item">🚀</span>
+            <span class="emoji-item">🙌</span><span class="emoji-item">👏</span><span class="emoji-item">🙏</span>
+            <span class="emoji-item">🥳</span><span class="emoji-item">🤩</span><span class="emoji-item">💡</span>
+            <span class="emoji-item">✨</span><span class="emoji-item">⭐</span><span class="emoji-item">💯</span>
+            <span class="emoji-item">🎵</span><span class="emoji-item">☕</span><span class="emoji-item">💻</span>
+          </div>
+        </div>
+
+        <!-- ATTACHMENT MENU POPOVER -->
+        <div class="attachment-menu hidden" id="attachment-menu">
+          <div class="attachment-option" id="attach-image-btn">
+            <i class="fas fa-image" style="color: #00c853;"></i> Photo / Image
+          </div>
+          <div class="attachment-option" id="attach-video-btn">
+            <i class="fas fa-video" style="color: #ff3b30;"></i> Video File
+          </div>
+          <div class="attachment-option" id="attach-audio-btn">
+            <i class="fas fa-headphones" style="color: #ff9500;"></i> Audio File
+          </div>
+          <div class="attachment-option" id="attach-doc-btn">
+            <i class="fas fa-file-alt" style="color: #5856d6;"></i> Document / PDF
+          </div>
+        </div>
+
+        <input type="file" id="hidden-chat-file-input" class="hidden">
+
+        <!-- Chat Input Footer -->
+        <footer class="chat-input-container">
+          <div id="chat-input-bar" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+            <button class="icon-btn" id="emoji-btn" title="Emojis"><i class="far fa-smile"></i></button>
+            <button class="icon-btn" id="attach-btn" title="Attach Media"><i class="fas fa-paperclip"></i></button>
+            <textarea id="chat-message-input" class="chat-input-field" placeholder="Type a message..." rows="1"></textarea>
+            <button class="icon-btn" id="voice-record-btn" title="Record Voice Note"><i class="fas fa-microphone"></i></button>
+            <button class="send-btn" id="send-message-btn" title="Send Message"><i class="fas fa-paper-plane"></i></button>
+          </div>
+
+          <!-- Voice Recording active banner -->
+          <div id="voice-recorder-bar" class="voice-recorder-bar hidden">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="recording-pulse"></span>
+              <span class="recording-timer" id="voice-timer">00:00</span>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="icon-btn" id="cancel-voice-btn" style="color: #ff3b30;"><i class="fas fa-trash"></i></button>
+              <button class="send-btn" id="send-voice-btn"><i class="fas fa-check"></i></button>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </main>
+
+    <!-- RIGHT PROFILE DRAWER -->
+    <div class="drawer hidden" id="profile-drawer">
+      <header class="drawer-header">
+        <button class="icon-btn" id="close-profile-drawer"><i class="fas fa-arrow-left"></i></button>
+        <span>User Profile</span>
+      </header>
+      <div class="drawer-body">
+        <form id="profile-edit-form" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="profile-card">
+            <div class="profile-avatar-large">
+              <img src="" id="profile-avatar-img" alt="Avatar">
+              <label for="profile-avatar-input" class="avatar-edit-overlay">
+                <i class="fas fa-camera fa-2x"></i>
+                <span style="font-size: 11px; margin-top: 4px;">Change Photo</span>
+              </label>
+              <input type="file" id="profile-avatar-input" class="hidden" accept="image/*">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Your Display Name</label>
+            <input type="text" id="profile-name-input" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label>Registered Email</label>
+            <input type="email" id="profile-email-input" class="form-control" placeholder="user@gmail.com" required readonly style="opacity: 0.85;">
+          </div>
+
+          <div class="form-group">
+            <label>Mobile Number (+91 Only)</label>
+            <div id="profile-phone-display" class="form-control" style="background: var(--bg-panel); opacity: 0.8;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Bio / Headline</label>
+            <input type="text" id="profile-bio-input" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>About</label>
+            <textarea id="profile-about-input" class="form-control" rows="2"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>User ID (UID)</label>
+            <div id="profile-uid-display" style="font-size: 12px; color: var(--text-muted); font-family: monospace;"></div>
+          </div>
+
+          <button type="submit" class="btn-primary">Save Profile & Sync</button>
+          <button type="button" class="btn-secondary" id="profile-logout-btn" style="margin-top: 6px; width: 100%; border: 1px solid #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.08); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px;">
+            <i class="fas fa-sign-out-alt"></i> Log Out Account
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- STATUS STORY FULLSCREEN VIEWER OVERLAY WITH REPLY BAR -->
+    <div class="status-viewer-overlay hidden" id="status-viewer-overlay">
+      <div class="status-progress-bars" id="status-progress-bars-container">
+        <!-- Progress bar segments injected dynamically -->
+      </div>
+      <header class="status-viewer-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img src="" id="status-viewer-user-avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+          <div>
+            <div id="status-viewer-user-name" style="font-weight: 600;">User Name</div>
+            <div id="status-viewer-time" style="font-size: 12px; opacity: 0.8;">Time</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button class="icon-btn" id="pause-status-btn" style="color: #fff;" title="Pause"><i class="fas fa-pause"></i></button>
+          <button class="icon-btn" id="close-status-viewer" style="color: #fff;" title="Close"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+      </header>
+
+      <div class="status-viewer-body" id="status-media-box">
+        <!-- Media content injected dynamically -->
+      </div>
+      <div id="status-caption-display" class="status-caption"></div>
+
+      <footer class="status-viewer-footer">
+        <div style="font-size: 13px;">
+          <i class="fas fa-eye"></i> <span id="status-view-count">0</span> views
+        </div>
+        <!-- Reply Bar like real WhatsApp Status -->
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1; max-width: 420px;" id="status-reply-container">
+          <input type="text" id="status-reply-input" class="status-reply-input-box" placeholder="Reply to status...">
+          <button class="send-btn" id="send-status-reply-btn" style="width: 36px; height: 36px; font-size: 14px;"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- FIRST-TIME USER 3-STEP SIGNUP VERIFICATION MODAL -->
+    <div class="modal-overlay hidden" id="signup-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>MD Chat Pro Verification</span>
+        </div>
+        <div class="modal-body">
+          
+          <!-- Step Indicator -->
+          <div class="step-indicator">
+            <div class="step-dot active" id="step-dot-1">1</div>
+            <div class="step-line"></div>
+            <div class="step-dot" id="step-dot-2">2</div>
+            <div class="step-line"></div>
+            <div class="step-dot" id="step-dot-3">3</div>
+          </div>
+
+          <!-- PAGE 1: USER NAME & MOBILE NUMBER (+91 ONLY) -->
+          <form id="signup-page-1">
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+              <strong>Step 1 of 3:</strong> Enter your full name and India mobile number (+91).
+            </p>
+            <div class="form-group">
+              <label>Full Name / Display Name</label>
+              <input type="text" id="signup-name-input" class="form-control" placeholder="e.g. Alex Morgan" required>
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <label>Mobile Number (+91 Only Access)</label>
+              <div style="display: flex; gap: 8px;">
+                <div style="display: flex; align-items: center; justify-content: center; padding: 0 16px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; color: var(--brand-green); font-size: 14px;">
+                  🇮🇳 +91
+                </div>
+                <input type="hidden" id="signup-country-code" value="+91">
+                <input type="tel" id="signup-phone-input" class="form-control" placeholder="98765 43210" maxlength="10" required style="flex: 1;">
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">
+              Continue to Step 2 <i class="fas fa-arrow-right" style="margin-left: 6px;"></i>
+            </button>
+          </form>
+
+          <!-- PAGE 2: CONTINUE WITH GOOGLE ONLY VIEW -->
+          <div id="signup-page-2" class="hidden">
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
+              <strong>Step 2 of 3:</strong> Sign in securely using your Google account.
+            </p>
+
+            <!-- CONTINUE WITH GOOGLE BUTTON -->
+            <button type="button" class="btn-google" id="continue-google-btn" style="padding: 14px 20px; font-size: 16px; width: 100%;">
+              <svg width="22" height="22" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+              <button type="button" class="btn-secondary" id="signup-back-btn" style="width: 100%;">Back to Step 1</button>
+            </div>
+          </div>
+
+          <!-- PAGE 3: UPLOAD PROFILE PICTURE -->
+          <form id="signup-page-3" class="hidden">
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; text-align: center;">
+              <strong>Step 3 of 3:</strong> Upload your profile photo for MD Chat Pro.
+            </p>
+
+            <div class="profile-card" style="margin-bottom: 16px;">
+              <div class="profile-avatar-large">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" id="signup-avatar-preview" alt="Avatar Preview">
+                <label for="signup-avatar-file-input" class="avatar-edit-overlay">
+                  <i class="fas fa-camera fa-2x"></i>
+                  <span style="font-size: 11px; margin-top: 4px;">Upload Photo</span>
+                </label>
+                <input type="file" id="signup-avatar-file-input" class="hidden" accept="image/*">
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+              <button type="button" class="btn-secondary" id="signup-step3-back-btn" style="flex: 1;">Back</button>
+              <button type="submit" class="btn-primary" style="flex: 2;">Complete & Launch</button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: ADD CONTACT -->
+    <div class="modal-overlay hidden" id="add-contact-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>Add New Contact</span>
+          <button class="icon-btn" id="close-contact-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <form id="add-contact-form">
+            <div class="form-group">
+              <label>Contact Name</label>
+              <input type="text" id="new-contact-name" class="form-control" required placeholder="e.g. John Doe">
+            </div>
+            <div class="form-group">
+              <label>Mobile Number (+91 Only)</label>
+              <div style="display: flex; gap: 8px;">
+                <div style="display: flex; align-items: center; justify-content: center; padding: 0 12px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; color: var(--brand-green);">
+                  +91
+                </div>
+                <input type="tel" id="new-contact-mobile" class="form-control" required placeholder="98765 43210" maxlength="10" style="flex: 1;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Profile Picture</label>
+              <input type="file" id="new-contact-photo" class="form-control" accept="image/*">
+            </div>
+            <div style="font-size: 11px; color: var(--brand-green); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-lock"></i> Synced (User Private Access Only)
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 12px;">Add Contact</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CREATE GROUP -->
+    <div class="modal-overlay hidden" id="create-group-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>Create New Group Chat</span>
+          <button class="icon-btn" id="close-group-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <form id="create-group-form">
+            <div class="form-group">
+              <label>Group Name</label>
+              <input type="text" id="new-group-name" class="form-control" required placeholder="e.g. Engineering Team">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <input type="text" id="new-group-desc" class="form-control" placeholder="Group purpose or description">
+            </div>
+            <div class="form-group">
+              <label>Group Avatar Icon</label>
+              <input type="file" id="new-group-photo" class="form-control" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label>Select Members</label>
+              <div id="group-members-picker" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+            <div style="font-size: 11px; color: var(--brand-green); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-shield-alt"></i> Synced (Member Restricted Access)
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 12px;">Create Group</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: UPLOAD STATUS (REAL WHATSAPP WEB STYLE CREATOR) -->
+    <div class="modal-overlay hidden" id="upload-status-modal">
+      <div class="modal-content status-creator-modal">
+        <!-- Header with Tab Switchers -->
+        <div class="modal-header status-creator-header">
+          <div class="status-tab-pills">
+            <button type="button" class="status-tab-btn active" id="status-tab-media">
+              <i class="fas fa-image"></i> Photo / Video
+            </button>
+            <button type="button" class="status-tab-btn" id="status-tab-text">
+              <i class="fas fa-font"></i> Text Story
+            </button>
+          </div>
+          <button class="icon-btn" id="close-status-modal"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="modal-body status-creator-body">
+          <form id="upload-status-form" style="display: flex; flex-direction: column;">
+            <input type="hidden" id="status-type-select" value="image">
+
+            <!-- 1. MEDIA UPLOAD & PREVIEW AREA -->
+            <div id="status-media-creator-view" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="status-file-picker-card" id="status-file-picker-zone">
+                <input type="file" id="status-file-input" class="hidden" accept="image/*,video/*">
+                <div id="status-file-prompt" style="text-align: center; cursor: pointer;">
+                  <i class="fas fa-cloud-upload-alt" style="font-size: 42px; color: var(--brand-green); margin-bottom: 10px;"></i>
+                  <div style="font-weight: 600; font-size: 15px;">Click to choose Photo or Video</div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Supports JPG, PNG, WEBP, MP4, MOV</div>
+                </div>
+                <div id="status-file-preview-container" class="hidden" style="position: relative; width: 100%; height: 220px; display: flex; align-items: center; justify-content: center;">
+                  <img id="status-image-preview-el" src="" class="hidden" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">
+                  <video id="status-video-preview-el" src="" class="hidden" controls style="max-width: 100%; max-height: 100%; border-radius: 8px;"></video>
+                  <button type="button" class="btn-secondary" id="change-status-file-btn" style="position: absolute; top: 10px; right: 10px; font-size: 11px; padding: 4px 10px; background: rgba(0,0,0,0.75); color: #fff; border: none;">Change File</button>
+                </div>
+              </div>
+
+              <!-- Media Caption Bar -->
+              <div class="status-caption-bar">
+                <i class="far fa-smile" style="font-size: 20px; color: var(--text-secondary); cursor: pointer;"></i>
+                <input type="text" id="status-caption-input" class="status-caption-field" placeholder="Add a caption...">
+              </div>
+            </div>
+
+            <!-- 2. TEXT STORY CREATOR CANVAS AREA -->
+            <div id="status-text-creator-view" class="hidden" style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="status-text-canvas" id="status-text-canvas" style="background-color: #005c4b;">
+                <textarea id="status-text-content-input" class="status-text-canvas-field" placeholder="Type a status update..." rows="4" maxlength="280"></textarea>
+              </div>
+
+              <!-- Text Story Controls (Color Palette & Font Switcher) -->
+              <div class="status-text-controls">
+                <div class="status-color-palette" id="status-color-swatches">
+                  <span class="color-swatch active" data-color="#005c4b" style="background-color: #005c4b;"></span>
+                  <span class="color-swatch" data-color="#7b1fa2" style="background-color: #7b1fa2;"></span>
+                  <span class="color-swatch" data-color="#c2185b" style="background-color: #c2185b;"></span>
+                  <span class="color-swatch" data-color="#0288d1" style="background-color: #0288d1;"></span>
+                  <span class="color-swatch" data-color="#388e3c" style="background-color: #388e3c;"></span>
+                  <span class="color-swatch" data-color="#1f2c34" style="background-color: #1f2c34;"></span>
+                  <span class="color-swatch" data-color="#ff8f00" style="background-color: #ff8f00;"></span>
+                </div>
+              </div>
+              <input type="hidden" id="status-bg-color-select" value="#005c4b">
+            </div>
+
+            <!-- Footer Action Bar -->
+            <div class="status-creator-footer">
+              <div style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-lock" style="color: var(--brand-green);"></i> Expires in 24h
+              </div>
+              <button type="submit" class="status-send-circle-btn" id="publish-status-btn" title="Send Status Story">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+  <!-- MODAL: CONTACT PROFILE & SHARED MEDIA (IMAGE & VIDEO VIEW) -->
+  <div class="modal-overlay hidden" id="contact-info-modal" style="z-index: 10000;">
+    <div class="modal-content contact-info-card" style="max-width: 440px; width: 92%;">
+      <div class="modal-header" style="justify-content: space-between;">
+        <span style="font-weight: 600; font-size: 16px;">Contact Profile Info</span>
+        <button class="icon-btn" id="close-contact-info-modal" title="Close"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; max-height: 75vh; overflow-y: auto;">
+        <!-- Top Profile Avatar & Primary Info -->
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+          <div style="position: relative; width: 90px; height: 90px; margin-bottom: 12px;">
+            <img src="" id="contact-info-avatar" alt="Contact Avatar" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--brand-green); cursor: pointer;" title="Click to view full image">
+          </div>
+          <h3 id="contact-info-name" style="font-size: 18px; font-weight: 700; margin: 0; color: var(--text-primary);">Contact Name</h3>
+          <div id="contact-info-phone" style="font-size: 14px; font-weight: 600; color: var(--brand-green); margin-top: 4px;">+91 98765 43210</div>
+          <div id="contact-info-status" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Online</div>
+        </div>
+
+        <!-- Bio / Headline -->
+        <div style="background: var(--bg-panel); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--brand-green); margin-bottom: 4px;">About / Bio</div>
+          <div id="contact-info-bio" style="font-size: 13.5px; color: var(--text-primary); line-height: 1.4;">Hey there! I am using MD Chat Pro.</div>
+        </div>
+
+        <!-- Shared Media Gallery (Image & Video Only View) -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);"><i class="fas fa-photo-video" style="color: var(--brand-green); margin-right: 6px;"></i> Shared Media (Images & Videos)</span>
+            <span id="contact-info-media-count" style="font-size: 12px; color: var(--text-secondary);">0 items</span>
+          </div>
+
+          <div id="contact-info-media-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 180px; overflow-y: auto;">
+            <!-- Media items rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Action Options Bar -->
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-primary" id="contact-info-call-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 13px;">
+            <i class="fas fa-phone-alt"></i> Voice Call
+          </button>
+          <button type="button" class="btn-primary" id="contact-info-video-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 13px; background: #0284c7;">
+            <i class="fas fa-video"></i> Video Call
+          </button>
+        </div>
+
+        <button type="button" class="btn-secondary" id="contact-info-delete-btn" style="width: 100%; border: 1px solid #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.08); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 13px;">
+          <i class="fas fa-trash-alt"></i> Delete Contact
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MEDIA LIGHTBOX VIEWER (FULLSCREEN IMAGE & VIDEO ONLY VIEW) -->
+  <div class="modal-overlay hidden" id="media-lightbox-modal" style="z-index: 99999; background: rgba(0, 0, 0, 0.92);">
+    <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+      
+      <!-- Top Action Bar -->
+      <div style="position: absolute; top: 16px; left: 20px; right: 20px; display: flex; align-items: center; justify-content: space-between; color: #fff; z-index: 10;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="fas fa-photo-video" style="color: var(--brand-accent); font-size: 18px;"></i>
+          <span id="lightbox-title" style="font-weight: 600; font-size: 15px;">Media View</span>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <a id="lightbox-download-btn" href="" download class="icon-btn" style="color: #fff; text-decoration: none;" title="Download Media"><i class="fas fa-download"></i></a>
+          <button class="icon-btn" id="close-lightbox-btn" style="color: #fff;" title="Close"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+      </div>
+
+      <!-- Media Display Area -->
+      <div style="max-width: 90vw; max-height: 82vh; display: flex; align-items: center; justify-content: center; margin-top: 40px;" id="lightbox-content-box">
+        <img id="lightbox-img" src="" class="hidden" style="max-width: 100%; max-height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 8px 32px rgba(0,0,0,0.6);">
+        <video id="lightbox-video" src="" controls class="hidden" style="max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);"></video>
+      </div>
+
+      <div id="lightbox-caption" style="margin-top: 12px; color: #e2e8f0; font-size: 14px; text-align: center; max-width: 600px;"></div>
+    </div>
+  </div>
+
+  <!-- WHATSAPP VOICE & VIDEO CALL MODAL OVERLAY -->
+  <div class="call-modal-overlay hidden" id="call-modal-overlay">
+    <div class="call-modal-card">
+      <div class="call-type-header" id="call-type-title">
+        <i class="fas fa-phone-alt" id="call-type-icon" style="color: var(--brand-accent);"></i> 
+        <span id="call-type-text">MD Voice Call</span>
+      </div>
+      
+      <div class="call-avatar-wrapper" id="call-avatar-wrapper">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" id="call-user-avatar" class="call-avatar-img" alt="Call User">
+        <div class="call-pulse-ring"></div>
+        <div class="call-pulse-ring delay"></div>
+      </div>
+      
+      <h3 class="call-user-name" id="call-user-name">Contact Name</h3>
+      <div class="call-status-subtitle" id="call-status-timer">Calling...</div>
+      
+      <!-- Video Call Feeds Container -->
+      <div class="call-video-streams hidden" id="call-video-streams">
+        <video id="call-remote-video" class="remote-video-feed" autoplay playsinline></video>
+        <video id="call-local-video" class="local-video-feed" autoplay playsinline muted></video>
+      </div>
+
+      <!-- Action Buttons Bar -->
+      <div class="call-actions-bar">
+        <button type="button" class="call-action-btn mute-btn" id="call-toggle-mute" title="Mute Microphone">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <button type="button" class="call-action-btn video-btn" id="call-toggle-camera" title="Toggle Camera">
+          <i class="fas fa-video"></i>
+        </button>
+        <button type="button" class="call-action-btn end-btn" id="call-hangup-btn" title="End Call">
+          <i class="fas fa-phone-slash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM WHATSAPP TOAST ALERT SYSTEM CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- APPLICATION SCRIPT -->
+  <script src="./js/bundle.js"></script>
+</body>
+</html>

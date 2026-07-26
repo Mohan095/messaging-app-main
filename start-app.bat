@@ -1,0 +1,6 @@
+@echo off
+echo Starting MD Chat Pro Local Server...
+echo Opening http://localhost:8080 in your default browser...
+start http://localhost:8080
+npx -y http-server . -p 8080
+pause

@@ -1,0 +1,21 @@
+{
+  "name": "MD Chat Pro",
+  "short_name": "MD Chat Pro",
+  "description": "Modern full-stack responsive MD Chat Pro application with real-time chat, status updates, voice notes, media library, and group chats.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#111b21",
+  "theme_color": "#00a884",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3670/3670051.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3670/3670051.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
