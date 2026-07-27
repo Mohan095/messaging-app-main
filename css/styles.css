@@ -3,19 +3,19 @@
    ========================================== */
 
 :root {
-  /* Color Palette - Full White & Emerald Green Theme */
-  --bg-app: #f0f2f5;
+  /* Color Palette - Premium White & Green Theme */
+  --bg-app: #eaf4ef;
   --bg-sidebar: #ffffff;
   --bg-panel: #ffffff;
-  --bg-panel-hover: #f5f6f8;
-  --bg-active: #e9edef;
-  --bg-input: #f0f2f5;
-  --bg-chat-area: #efeae2;
+  --bg-panel-hover: #f0f7f3;
+  --bg-active: #e2f3e8;
+  --bg-input: #f4f9f6;
+  --bg-chat-area: #f4f9f6;
   
   --bubble-out: #d9fdd3;
   --bubble-in: #ffffff;
-  --bubble-out-text: #111b21;
-  --bubble-in-text: #111b21;
+  --bubble-out-text: #0a3323;
+  --bubble-in-text: #0a261c;
   
   --brand-green: #008069;
   --brand-green-hover: #006e5a;
@@ -23,19 +23,19 @@
   --unread-badge: #25d366;
   --blue-tick: #008069;
   
-  --text-primary: #111b21;
-  --text-secondary: #54656f;
-  --text-muted: #8696a0;
-  --border-color: #e9edef;
+  --text-primary: #0a261c;
+  --text-secondary: #4a665a;
+  --text-muted: #79998d;
+  --border-color: #d3ebd9;
   --border-subtle: rgba(0, 128, 105, 0.12);
 
-  --modal-overlay: rgba(11, 20, 26, 0.45);
-  --glass-bg: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(0, 128, 105, 0.12);
+  --modal-overlay: rgba(5, 41, 30, 0.45);
+  --glass-bg: rgba(255, 255, 255, 0.98);
+  --glass-border: rgba(0, 128, 105, 0.15);
 
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 4px rgba(0,128,105,0.08);
   --shadow-md: 0 4px 14px rgba(0,128,105,0.12);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
+  --shadow-lg: 0 10px 30px rgba(0,80,50,0.15);
 
   --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
   --transition-fast: 0.18s ease;
@@ -51,7 +51,7 @@
 /* Base White & Green Navigation & Header Accents */
 .nav-rail {
   background: #008069 !important;
-  border-right: 1px solid #006e5a !important;
+  border-right: 1px solid #005c4b !important;
 }
 
 .nav-btn {
@@ -74,8 +74,8 @@
 }
 
 .sidebar-header {
-  background: #f0f2f5 !important;
-  border-bottom: 1px solid #e9edef !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #d3ebd9 !important;
 }
 
 .sidebar-title {
@@ -83,13 +83,13 @@
 }
 
 .chat-header {
-  background: #f0f2f5 !important;
-  border-bottom: 1px solid #e9edef !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #d3ebd9 !important;
 }
 
 .chat-input-container {
-  background: #f0f2f5 !important;
-  border-top: 1px solid #e9edef !important;
+  background: #ffffff !important;
+  border-top: 1px solid #d3ebd9 !important;
 }
 
 /* Base Styles */
@@ -317,7 +317,7 @@ a {
 .splash-screen {
   position: fixed;
   inset: 0;
-  background-color: #111b21;
+  background: linear-gradient(135deg, #008069 0%, #005c4b 100%);
   z-index: 99999;
   display: flex;
   flex-direction: column;
@@ -339,24 +339,24 @@ a {
 }
 .splash-logo {
   font-size: 72px;
-  color: #00a884;
+  color: #ffffff;
   animation: logoPulse 1.8s ease-in-out infinite alternate;
 }
 @keyframes logoPulse {
-  0% { transform: scale(0.95); opacity: 0.8; filter: drop-shadow(0 0 10px rgba(0, 168, 132, 0.4)); }
-  100% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 25px rgba(0, 168, 132, 0.8)); }
+  0% { transform: scale(0.95); opacity: 0.85; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4)); }
+  100% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.8)); }
 }
 .splash-progress-track {
   width: 240px;
-  height: 3px;
-  background-color: #202c33;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.25);
   border-radius: 2px;
   overflow: hidden;
 }
 .splash-progress-fill {
   height: 100%;
   width: 0%;
-  background-color: #00a884;
+  background-color: #ffffff;
   animation: splashLoad 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 @keyframes splashLoad {
@@ -365,16 +365,16 @@ a {
   100% { width: 100%; }
 }
 .splash-title {
-  font-size: 22px;
-  font-weight: 300;
-  color: #e9edef;
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
   letter-spacing: 0.5px;
 }
 .splash-security {
   position: absolute;
   bottom: 40px;
   font-size: 13px;
-  color: #8696a0;
+  color: rgba(255, 255, 255, 0.85);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -429,19 +429,27 @@ a {
 }
 .nav-btn .badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background-color: var(--brand-green);
-  color: #fff;
+  top: 2px;
+  right: 2px;
+  background-color: #25d366;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 700;
-  height: 16px;
-  min-width: 16px;
-  padding: 0 4px;
-  border-radius: 10px;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.6);
+  border: 1.5px solid #ffffff;
+  animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badgePop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 .user-avatar-btn {
   width: 36px;
@@ -2222,13 +2230,88 @@ a {
   gap: 10px;
 }
 
+/* ==========================================
+   UNIFIED MENU SYSTEM, LIST & ICON ANIMATIONS
+   ========================================== */
+
+/* Keyframes for Icon Animations */
+@keyframes contactIconBounce {
+  0% { transform: scale(1) translateY(0); }
+  40% { transform: scale(1.25) translateY(-3px); }
+  70% { transform: scale(0.95) translateY(1px); }
+  100% { transform: scale(1.15) translateY(-1px); }
+}
+
+@keyframes groupIconWobble {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.2) rotate(-12deg); }
+  50% { transform: scale(1.2) rotate(12deg); }
+  75% { transform: scale(1.15) rotate(-6deg); }
+  100% { transform: scale(1.15) rotate(0deg); }
+}
+
+@keyframes statusIconSpin {
+  0% { transform: rotate(0deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1.15); }
+}
+
+@keyframes settingsGearSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(180deg) scale(1.2); }
+}
+
+@keyframes logoutSlideRight {
+  0% { transform: translateX(0) scale(1); }
+  100% { transform: translateX(5px) scale(1.2); }
+}
+
+/* Contact Icon Animation Triggers */
+.nav-btn:hover .fa-address-book,
+.dropdown-item:hover .fa-user-plus,
+.icon-btn:hover .fa-user-plus,
+.settings-menu-item:hover .fa-user-plus {
+  animation: contactIconBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--brand-accent) !important;
+}
+
+/* Group Icon Animation Triggers */
+.dropdown-item:hover .fa-users,
+.icon-btn:hover .fa-users-cog,
+.dropdown-item:hover .fa-users-cog {
+  animation: groupIconWobble 0.5s ease-in-out;
+  color: var(--brand-accent) !important;
+}
+
+/* Status Icon Animation Triggers */
+.nav-btn:hover .fa-circle-notch,
+.dropdown-item:hover .fa-circle-notch {
+  animation: statusIconSpin 1.2s linear infinite;
+  color: var(--unread-badge) !important;
+}
+
+/* Settings Icon Animation Triggers */
+.nav-btn:hover .fa-cog,
+.dropdown-item:hover .fa-cog,
+.settings-menu-item:hover .fa-cog,
+.settings-menu-item:hover .fa-gear {
+  animation: settingsGearSpin 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--brand-accent) !important;
+}
+
+/* Log Out Icon Animation Triggers */
+.dropdown-item:hover .fa-sign-out-alt,
+.settings-menu-item:hover .fa-sign-out-alt {
+  animation: logoutSlideRight 0.4s ease-in-out infinite alternate;
+  color: #ef4444 !important;
+}
+
 .settings-menu-item {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
   background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 14.5px;
@@ -2242,18 +2325,25 @@ a {
 
 .settings-menu-item:hover {
   background: var(--bg-panel-hover);
-  border-color: rgba(0, 168, 132, 0.35);
+  border-color: rgba(0, 128, 105, 0.35);
   border-left: 4px solid var(--brand-green);
-  padding-left: 15px;
+  padding-left: 22px;
   transform: translateX(3px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 128, 105, 0.12);
+}
+
+.settings-menu-item#setting-menu-logout:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.35);
+  border-left: 4px solid #ef4444;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
 }
 
 .settings-menu-icon {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: rgba(0, 168, 132, 0.14);
+  background: rgba(0, 128, 105, 0.12);
   color: var(--brand-green);
   display: flex;
   align-items: center;
@@ -2267,14 +2357,25 @@ a {
   background: var(--brand-green);
   color: #ffffff;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 168, 132, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 128, 105, 0.3);
+}
+
+.settings-menu-item#setting-menu-logout .settings-menu-icon {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.settings-menu-item#setting-menu-logout:hover .settings-menu-icon {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
 }
 
 .settings-sub-panel {
-  background: rgba(20, 30, 36, 0.65);
+  background: rgba(244, 249, 246, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 16px;
   margin-top: -4px;
@@ -2295,14 +2396,14 @@ a {
   position: absolute;
   top: 55px;
   right: 16px;
-  background: rgba(17, 27, 33, 0.96);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  box-shadow: 0 10px 30px rgba(0, 80, 50, 0.15);
   z-index: 1000;
-  width: 210px;
+  width: 220px;
   overflow: hidden;
   padding: 6px 0;
   animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -2311,9 +2412,10 @@ a {
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 12px 18px;
   font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -2321,15 +2423,23 @@ a {
 
 .dropdown-item:hover {
   background: var(--bg-panel-hover);
-  color: var(--brand-accent);
-  padding-left: 22px;
+  color: var(--brand-green);
+  padding-left: 24px;
+  border-left: 3.5px solid var(--brand-green);
+}
+
+.dropdown-item#dropdown-logout:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border-left: 3.5px solid #ef4444;
 }
 
 .dropdown-item i {
   color: var(--brand-green);
-  font-size: 15px;
-  width: 20px;
+  font-size: 16px;
+  width: 22px;
   text-align: center;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 /* MOBILE SCREEN & RESPONSIVE LAYOUT SYSTEM */
@@ -2668,6 +2778,46 @@ a {
 /* ==========================================
    AUTHENTIC WHATSAPP VOICE & VIDEO CALL STYLES
    ========================================== */
+
+/* Enhanced Contact List Call Button Styling & Animation */
+.call-contact-btn {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #008069 0%, #00a884 100%) !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 4px 12px rgba(0, 128, 105, 0.4) !important;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative;
+}
+
+.call-contact-btn i {
+  color: #ffffff !important;
+  transition: transform 0.2s ease !important;
+}
+
+.call-contact-btn:hover {
+  transform: scale(1.15) rotate(-10deg) !important;
+  background: linear-gradient(135deg, #00967a 0%, #00c49a 100%) !important;
+  box-shadow: 0 6px 18px rgba(0, 168, 132, 0.6) !important;
+}
+
+.call-contact-btn:hover i {
+  transform: scale(1.1) !important;
+}
+
+.call-contact-btn:active {
+  transform: scale(0.92) rotate(0deg) !important;
+  box-shadow: 0 2px 8px rgba(0, 128, 105, 0.4) !important;
+}
+
 .call-modal-overlay {
   position: fixed;
   top: 0;
@@ -2676,10 +2826,10 @@ a {
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(11, 20, 26, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 9999;
+  background: rgba(5, 41, 30, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2688,37 +2838,47 @@ a {
 
 .call-modal-card {
   width: 92%;
-  max-width: 440px;
-  background: var(--bg-panel);
-  border: 1px solid var(--glass-border);
+  max-width: 420px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-top: 4px solid var(--brand-green);
   border-radius: 24px;
-  padding: 32px 24px;
+  padding: 36px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 50px rgba(0, 80, 50, 0.3);
   position: relative;
   overflow: hidden;
   text-align: center;
+  animation: callCardPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes callCardPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .call-type-header {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--brand-accent);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-green);
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 24px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  background: rgba(0, 128, 105, 0.1);
+  padding: 6px 14px;
+  border-radius: 20px;
 }
 
 .call-avatar-wrapper {
   position: relative;
-  width: 110px;
-  height: 110px;
+  width: 120px;
+  height: 120px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -2726,13 +2886,13 @@ a {
 }
 
 .call-avatar-img {
-  width: 100px;
-  height: 100px;
+  width: 104px;
+  height: 104px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--brand-green);
+  border: 3.5px solid var(--brand-green);
   z-index: 2;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 128, 105, 0.3);
 }
 
 .call-pulse-ring {
@@ -2751,9 +2911,9 @@ a {
 }
 
 @keyframes pulseRing {
-  0% { transform: scale(0.9); opacity: 0.8; }
+  0% { transform: scale(0.88); opacity: 0.8; }
   50% { opacity: 0.4; }
-  100% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.65); opacity: 0; }
 }
 
 .call-user-name {
@@ -2769,6 +2929,7 @@ a {
   font-weight: 600;
   margin-bottom: 28px;
   min-height: 20px;
+  letter-spacing: 0.3px;
 }
 
 .call-video-streams {
@@ -2811,35 +2972,103 @@ a {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: none;
-  background: var(--bg-panel-hover);
-  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  background: #f4f9f6;
+  color: var(--brand-green);
   font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 12px rgba(0, 128, 105, 0.12);
 }
 
 .call-action-btn:hover {
-  transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.12);
+  background: var(--brand-green);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 128, 105, 0.35);
 }
 
 .call-action-btn.active {
   background: #ef4444 !important;
   color: #ffffff !important;
+  border-color: #ef4444 !important;
 }
 
 .call-action-btn.end-btn {
-  background: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #ffffff;
+  border: none;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.45);
 }
 
 .call-action-btn.end-btn:hover {
-  background: #dc2626;
-  transform: scale(1.15);
+  background: linear-gradient(135deg, #f87171 0%, #b91c1c 100%);
+  transform: scale(1.16) rotate(12deg);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.6);
+}
+
+/* ==========================================
+   CROSS-DEVICE TOUCH & RESPONSIVE PROFILE CARD STYLES
+   ========================================== */
+.item-avatar,
+.chat-avatar,
+#contact-info-avatar,
+#chat-header-details {
+  cursor: pointer !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 128, 105, 0.2);
+}
+
+.item-avatar:active,
+.chat-avatar:active,
+#contact-info-avatar:active {
+  transform: scale(0.95);
+}
+
+.contact-info-card {
+  width: 92vw !important;
+  max-width: 440px !important;
+  max-height: 88vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 24px !important;
+  box-shadow: 0 20px 50px rgba(0, 80, 50, 0.35) !important;
+  animation: modalPopUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  -webkit-overflow-scrolling: touch;
+}
+
+@keyframes modalPopUp {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .contact-info-card {
+    width: 95vw !important;
+    padding: 12px 10px !important;
+    border-radius: 20px !important;
+  }
+
+  #contact-info-avatar {
+    width: 105px !important;
+    height: 105px !important;
+  }
+
+  #contact-info-name {
+    font-size: 19px !important;
+  }
+
+  #contact-info-phone-pill {
+    font-size: 13.5px !important;
+    padding: 6px 14px !important;
+  }
+
+  #contact-info-zoom-btn {
+    font-size: 12.5px !important;
+    padding: 9px !important;
+  }
 }
 

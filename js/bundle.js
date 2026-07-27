@@ -223,8 +223,17 @@
               if (convKey) {
                 const currentList = newMessagesState[convKey] || [];
                 if (!currentList.some(m => m.id === msg.id)) {
-                  newMessagesState[convKey] = [...currentList, msg].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                  const isRead = (msg.senderId === currentUserId) || (activeChatId === convKey);
+                  const msgWithRead = { ...msg, read: isRead };
+                  newMessagesState[convKey] = [...currentList, msgWithRead].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                   updated = true;
+
+                  if (msg.senderId !== currentUserId && activeChatId !== convKey) {
+                    const unreadCnt = (newMessagesState[convKey] || []).filter(m => m.senderId !== currentUserId && m.read === false).length;
+                    if (typeof window.showToastAlert === 'function') {
+                      window.showToastAlert(`📩 New message from ${msg.senderName || 'Contact'}: "${msg.text || '[Media]'}" (${unreadCnt})`, 'info', 5000);
+                    }
+                  }
                 }
               }
             });
@@ -232,6 +241,8 @@
             if (updated) {
               store.updateState({ messages: newMessagesState });
               renderMessages();
+              if (typeof renderChatsList === 'function') renderChatsList();
+              if (typeof updateNavChatsBadge === 'function') updateNavChatsBadge();
             }
           }
         }, (err) => {
@@ -736,12 +747,18 @@
       });
     }
 
-    // Direct Edit Profile Pencil Click
-    document.getElementById('edit-profile-pencil')?.addEventListener('click', (e) => {
-      e.stopPropagation();
+    // Direct Edit Profile Pencil & Profile Card Click
+    const openMyProfileDrawer = (e) => {
+      if (e) e.stopPropagation();
       renderProfileData();
       document.getElementById('profile-drawer')?.classList.remove('hidden');
-    });
+    };
+
+    document.getElementById('edit-profile-pencil')?.addEventListener('click', openMyProfileDrawer);
+    document.getElementById('settings-profile-header')?.addEventListener('click', openMyProfileDrawer);
+    document.getElementById('global-nav-avatar')?.addEventListener('click', openMyProfileDrawer);
+    document.getElementById('nav-profile-btn')?.addEventListener('click', openMyProfileDrawer);
+    document.getElementById('status-my-avatar')?.addEventListener('click', openMyProfileDrawer);
 
     // Auto-render profile data on state changes
     store.subscribe(renderProfileData);
@@ -764,16 +781,30 @@
     if (settingsName) settingsName.textContent = currentUser.name;
     if (settingsBio) settingsBio.textContent = currentUser.bio || currentUser.about || "Hey there! I am using MD Chat Pro.";
 
-    // Update Profile Drawer Inputs
+    // Update Profile Drawer Inputs & Big View Elements
     const profileImg = document.getElementById('profile-avatar-img');
+    const profileNameTitle = document.getElementById('profile-name-title');
     const profileNameInput = document.getElementById('profile-name-input');
     const profileEmailInput = document.getElementById('profile-email-input');
     const profilePhoneDisplay = document.getElementById('profile-phone-display');
     const profileBioInput = document.getElementById('profile-bio-input');
     const profileAboutInput = document.getElementById('profile-about-input');
     const profileUidDisplay = document.getElementById('profile-uid-display');
+    const profileZoomBtn = document.getElementById('profile-zoom-btn');
 
-    if (profileImg) profileImg.src = currentUser.avatar;
+    if (profileImg) {
+      profileImg.src = currentUser.avatar;
+      profileImg.onclick = () => openMediaLightbox(currentUser.avatar, 'image', `${currentUser.name}'s Profile Photo (My Big View)`);
+    }
+
+    if (profileZoomBtn) {
+      profileZoomBtn.onclick = () => openMediaLightbox(currentUser.avatar, 'image', `${currentUser.name}'s Profile Photo (Full Screen HD)`);
+    }
+
+    if (profileNameTitle) {
+      profileNameTitle.innerHTML = `${escapeHtml(currentUser.name || 'My Profile')} <i class="fas fa-check-circle" style="color: var(--brand-green); font-size: 17px;"></i>`;
+    }
+
     if (profileNameInput) profileNameInput.value = currentUser.name || '';
     if (profileEmailInput) profileEmailInput.value = currentUser.email || 'user@gmail.com';
     if (profilePhoneDisplay) profilePhoneDisplay.textContent = currentUser.mobile || '+91 9876543210';
@@ -1020,17 +1051,23 @@
         </div>
         <div class="item-info">
           <div class="item-top-row">
-            <span class="item-name">${c.name}</span>
+            <span class="item-name" style="font-weight: 600; font-size: 15px; color: var(--text-primary);">${c.name}</span>
             <span class="item-time" style="color: ${c.favorite ? '#ffb703' : 'inherit'}">
               ${c.favorite ? '<i class="fas fa-star"></i>' : ''}
             </span>
           </div>
           <div class="item-bottom-row">
-            <span class="item-preview">${c.bio || c.mobile}</span>
+            <span class="item-preview" style="color: var(--brand-green); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-mobile-alt" style="font-size: 12px; color: var(--brand-green);"></i>
+              ${c.mobile}
+            </span>
           </div>
         </div>
-        <div class="item-actions" style="display: flex; align-items: center; gap: 4px;">
-          <button type="button" class="icon-btn delete-contact-btn" data-contact-id="${c.uid}" title="Delete Contact" style="width: 32px; height: 32px; font-size: 14px; color: #ef4444; background: transparent; border: none; cursor: pointer;">
+        <div class="item-actions" style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="icon-btn call-contact-btn" data-contact-id="${c.uid}" title="Call ${c.name}" style="width: 36px; height: 36px; font-size: 15px; color: #ffffff; background: #008069; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0, 128, 105, 0.35);">
+            <i class="fas fa-phone-alt"></i>
+          </button>
+          <button type="button" class="icon-btn delete-contact-btn" data-contact-id="${c.uid}" title="Delete Contact" style="width: 32px; height: 32px; font-size: 13px; color: #ef4444; background: rgba(239, 68, 68, 0.1); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>
@@ -1039,7 +1076,7 @@
 
     container.querySelectorAll('.list-item').forEach((item) => {
       item.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-contact-btn')) return;
+        if (e.target.closest('.delete-contact-btn') || e.target.closest('.call-contact-btn')) return;
         if (e.target.closest('.item-avatar')) {
           e.stopPropagation();
           const contactId = item.getAttribute('data-contact-id');
@@ -1050,6 +1087,27 @@
         container.querySelectorAll('.list-item').forEach((i) => i.classList.remove('active'));
         e.currentTarget.classList.add('active');
         setActiveChat(id, 'private');
+      });
+    });
+
+    container.querySelectorAll('.call-contact-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const contactId = e.currentTarget.getAttribute('data-contact-id');
+        const { contacts } = store.getState();
+        const contact = contacts.find((c) => c.uid === contactId);
+        if (contact) {
+          activeChatId = contactId;
+          setActiveChat(contactId, 'private');
+          if (typeof window.showToastAlert === 'function') {
+            window.showToastAlert(`Calling ${contact.name} (${contact.mobile})...`, 'info');
+          }
+          if (typeof startCall === 'function') {
+            startCall(false);
+          } else if (typeof window.startCall === 'function') {
+            window.startCall(false);
+          }
+        }
       });
     });
 
@@ -2142,6 +2200,7 @@
   let localCallStream = null;
 
   function startCall(isVideo = false) {
+    window.startCall = startCall;
     const { contacts, groups } = store.getState();
     const avatarEl = document.getElementById('call-user-avatar');
     const nameEl = document.getElementById('call-user-name');
@@ -2246,7 +2305,8 @@
     if (chatPane) chatPane.classList.remove('hidden');
     if (chatWindow) chatWindow.classList.add('mobile-active');
 
-    const { contacts, groups } = store.getState();
+    const { contacts, groups, messages, currentUser } = store.getState();
+    const currentUserId = currentUser ? currentUser.uid : '';
     const avatarEl = document.getElementById('chat-header-avatar');
     const titleEl = document.getElementById('chat-header-title');
     const subtitleEl = document.getElementById('chat-header-subtitle');
@@ -2265,6 +2325,22 @@
         if (titleEl) titleEl.textContent = group.name;
         if (subtitleEl) subtitleEl.textContent = `${group.members.length} members`;
       }
+    }
+
+    // Mark all unread messages for this chat as read
+    const chatMsgs = messages[targetId] || [];
+    if (chatMsgs.some(m => m.senderId !== currentUserId && m.read === false)) {
+      const updatedMsgs = chatMsgs.map(m => (m.senderId !== currentUserId && m.read === false) ? { ...m, read: true } : m);
+      store.updateState({
+        messages: {
+          ...messages,
+          [targetId]: updatedMsgs
+        }
+      });
+      setTimeout(() => {
+        renderChatsList();
+        updateNavChatsBadge();
+      }, 0);
     }
 
     renderMessages();
@@ -2480,13 +2556,14 @@
   function sendMessage(msgData) {
     if (!activeChatId) return;
 
-    const { currentUser, messages } = store.getState();
+    const { currentUser, messages, contacts } = store.getState();
     const newMsg = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       senderId: currentUser.uid,
       senderName: currentUser.name,
       timestamp: new Date().toISOString(),
       status: 'seen',
+      read: true,
       ...msgData
     };
 
@@ -2499,7 +2576,96 @@
     store.updateState({ messages: updatedMessages });
     syncMessageToFirebase(activeChatId, newMsg);
     renderMessages();
+    renderChatsList();
     playMessageAudioAlert();
+
+    // Trigger user-to-user auto response for live notification view testing
+    if (activeChatType === 'private' && activeChatId) {
+      const targetId = activeChatId;
+      const contactObj = contacts.find(c => c.uid === targetId);
+      if (contactObj) {
+        setTimeout(() => {
+          const sampleReplies = [
+            `Got your message! I am reviewing it right now. 👍`,
+            `Thanks for reaching out! Let's talk soon. 😊`,
+            `Received: "${msgData.text || 'media'}". Thanks!`,
+            `Hey ${currentUser.name}! Message received loud and clear. 🚀`
+          ];
+          const replyText = sampleReplies[Math.floor(Math.random() * sampleReplies.length)];
+          receiveIncomingUserMessage(targetId, replyText, contactObj.name);
+        }, 1500);
+      }
+    }
+  }
+
+  function receiveIncomingUserMessage(chatId, text, senderName = 'Contact') {
+    const { messages, contacts, groups, currentUser } = store.getState();
+    const currentUserId = currentUser ? currentUser.uid : '';
+    const contact = contacts.find(c => c.uid === chatId);
+    const group = groups.find(g => g.id === chatId);
+    const displayName = senderName || (contact ? contact.name : (group ? group.name : 'User'));
+    const isCurrentActive = (activeChatId === chatId);
+
+    const newMsg = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      senderId: chatId,
+      senderName: displayName,
+      text: text,
+      type: 'text',
+      timestamp: new Date().toISOString(),
+      status: 'delivered',
+      read: isCurrentActive
+    };
+
+    const currentChatMsgs = messages[chatId] || [];
+    const updatedMessages = {
+      ...messages,
+      [chatId]: [...currentChatMsgs, newMsg]
+    };
+
+    store.updateState({ messages: updatedMessages });
+
+    const currentMsgs = updatedMessages[chatId] || [];
+    const unreadCount = currentMsgs.filter(m => m.senderId !== currentUserId && m.read === false).length;
+
+    if (isCurrentActive) {
+      renderMessages();
+    } else {
+      if (typeof window.showToastAlert === 'function') {
+        window.showToastAlert(`📩 New message from ${displayName}: "${text}" (${unreadCount})`, 'info', 5000);
+      }
+      playMessageAudioAlert();
+    }
+
+    renderChatsList();
+    updateNavChatsBadge();
+  }
+
+  function updateNavChatsBadge() {
+    const { messages, currentUser } = store.getState();
+    const currentUserId = currentUser ? currentUser.uid : '';
+    let totalUnread = 0;
+
+    Object.keys(messages).forEach(chatId => {
+      const chatMsgs = messages[chatId] || [];
+      totalUnread += chatMsgs.filter(m => m.senderId !== currentUserId && m.read === false).length;
+    });
+
+    const chatsBtn = document.getElementById('nav-chats-btn');
+    if (chatsBtn) {
+      let badgeEl = chatsBtn.querySelector('.badge');
+      if (totalUnread > 0) {
+        if (!badgeEl) {
+          badgeEl = document.createElement('span');
+          badgeEl.className = 'badge';
+          chatsBtn.appendChild(badgeEl);
+        }
+        badgeEl.textContent = totalUnread > 9 ? '9+' : `(${totalUnread})`;
+        badgeEl.style.display = 'flex';
+      } else if (badgeEl) {
+        badgeEl.style.display = 'none';
+      }
+    }
   }
 
   async function startVoiceRecording() {
@@ -2650,6 +2816,16 @@
         switchTab(tab);
       });
     });
+
+    const chatHeaderDetails = document.getElementById('chat-header-details');
+    if (chatHeaderDetails) {
+      chatHeaderDetails.addEventListener('click', (e) => {
+        if (e.target.closest('#mobile-chat-back')) return;
+        if (activeChatId) {
+          openContactInfoModal(activeChatId);
+        }
+      });
+    }
 
     const headerSettingsBtn = document.getElementById('header-settings-btn');
     if (headerSettingsBtn) {
@@ -2811,12 +2987,14 @@
     const container = document.getElementById('chats-list-container');
     if (!container) return;
 
-    const { contacts, groups, messages } = store.getState();
+    const { contacts, groups, messages, currentUser } = store.getState();
+    const currentUserId = currentUser ? currentUser.uid : '';
     const allConversations = [];
 
     contacts.forEach((c) => {
       const chatMsgs = messages[c.uid] || [];
       const lastMsg = chatMsgs[chatMsgs.length - 1];
+      const unreadCount = chatMsgs.filter(m => m.senderId !== currentUserId && m.read === false).length;
       allConversations.push({
         id: c.uid,
         type: 'private',
@@ -2826,13 +3004,15 @@
         lastMsgText: lastMsg ? (lastMsg.type === 'text' ? lastMsg.text : `[${lastMsg.type}]`) : c.bio,
         lastMsgTime: lastMsg ? formatTimeShort(lastMsg.timestamp) : '',
         lastMsgStatus: lastMsg ? lastMsg.status : '',
-        rawTime: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0
+        rawTime: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0,
+        unreadCount
       });
     });
 
     groups.forEach((g) => {
       const groupMsgs = messages[g.id] || [];
       const lastMsg = groupMsgs[groupMsgs.length - 1];
+      const unreadCount = groupMsgs.filter(m => m.senderId !== currentUserId && m.read === false).length;
       allConversations.push({
         id: g.id,
         type: 'group',
@@ -2842,7 +3022,8 @@
         lastMsgText: lastMsg ? `${lastMsg.senderName}: ${lastMsg.text}` : g.description,
         lastMsgTime: lastMsg ? formatTimeShort(lastMsg.timestamp) : '',
         lastMsgStatus: lastMsg ? lastMsg.status : '',
-        rawTime: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0
+        rawTime: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0,
+        unreadCount
       });
     });
 
@@ -2861,20 +3042,21 @@
     }
 
     container.innerHTML = filtered.map((c) => `
-      <div class="list-item" data-chat-id="${c.id}" data-chat-type="${c.type}">
+      <div class="list-item ${c.id === activeChatId ? 'active' : ''}" data-chat-id="${c.id}" data-chat-type="${c.type}">
         <div class="item-avatar">
           <img src="${c.avatar}" alt="${c.name}">
           ${c.online ? '<span class="online-dot"></span>' : ''}
         </div>
         <div class="item-info">
           <div class="item-top-row">
-            <span class="item-name">${c.name}</span>
-            <span class="item-time">${c.lastMsgTime}</span>
+            <span class="item-name" style="${c.unreadCount > 0 ? 'font-weight: 700; color: var(--text-primary);' : ''}">${c.name}</span>
+            <span class="item-time" style="${c.unreadCount > 0 ? 'color: var(--brand-green); font-weight: 600;' : ''}">${c.lastMsgTime}</span>
           </div>
-          <div class="item-bottom-row">
-            <span class="item-preview">
+          <div class="item-bottom-row" style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="item-preview" style="${c.unreadCount > 0 ? 'color: var(--text-primary); font-weight: 600;' : ''}">
               ${c.lastMsgText}
             </span>
+            ${c.unreadCount > 0 ? `<span class="unread-badge-count" style="background: var(--brand-green); color: #ffffff; font-size: 11px; font-weight: 700; height: 20px; min-width: 20px; padding: 0 6px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 128, 105, 0.4); margin-left: 6px;">(${c.unreadCount})</span>` : ''}
           </div>
         </div>
         <div class="item-actions" style="display: flex; align-items: center; gap: 4px;">
@@ -2945,6 +3127,7 @@
     const statusEl = document.getElementById('contact-info-status');
     const mediaCountEl = document.getElementById('contact-info-media-count');
     const mediaGridEl = document.getElementById('contact-info-media-grid');
+    const zoomBtn = document.getElementById('contact-info-zoom-btn');
 
     const contact = contacts.find(c => c.uid === targetId);
     const group = groups.find(g => g.id === targetId);
@@ -2952,16 +3135,22 @@
     if (contact) {
       if (avatarEl) {
         avatarEl.src = contact.avatar;
-        avatarEl.onclick = () => openMediaLightbox(contact.avatar, 'image', `${contact.name}'s Profile Photo`);
+        avatarEl.onclick = () => openMediaLightbox(contact.avatar, 'image', `${contact.name}'s Profile Photo (Big View)`);
       }
-      if (nameEl) nameEl.textContent = contact.name;
+      if (zoomBtn) {
+        zoomBtn.onclick = () => openMediaLightbox(contact.avatar, 'image', `${contact.name}'s Profile Photo (Full Screen HD)`);
+      }
+      if (nameEl) nameEl.innerHTML = `${escapeHtml(contact.name)} <i class="fas fa-check-circle" style="color: var(--brand-green); font-size: 17px;"></i>`;
       if (phoneEl) phoneEl.textContent = contact.mobile || 'N/A';
       if (bioEl) bioEl.textContent = contact.bio || 'Hey there! I am using MD Chat Pro.';
       if (statusEl) statusEl.textContent = contact.online ? '🟢 Online' : contact.lastSeen || 'Offline';
     } else if (group) {
       if (avatarEl) {
         avatarEl.src = group.avatar;
-        avatarEl.onclick = () => openMediaLightbox(group.avatar, 'image', `${group.name}'s Group Icon`);
+        avatarEl.onclick = () => openMediaLightbox(group.avatar, 'image', `${group.name}'s Group Icon (Big View)`);
+      }
+      if (zoomBtn) {
+        zoomBtn.onclick = () => openMediaLightbox(group.avatar, 'image', `${group.name}'s Group Icon (Full Screen HD)`);
       }
       if (nameEl) nameEl.textContent = group.name;
       if (phoneEl) phoneEl.textContent = `Group (${group.members.length} members)`;
@@ -3008,10 +3197,10 @@
     if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
 
     const callBtn = document.getElementById('contact-info-call-btn');
-    if (callBtn) callBtn.onclick = () => { modal.classList.add('hidden'); startCall(false); };
+    if (callBtn) callBtn.onclick = () => { modal.classList.add('hidden'); startCall(false, targetId); };
 
     const videoBtn = document.getElementById('contact-info-video-btn');
-    if (videoBtn) videoBtn.onclick = () => { modal.classList.add('hidden'); startCall(true); };
+    if (videoBtn) videoBtn.onclick = () => { modal.classList.add('hidden'); startCall(true, targetId); };
 
     const deleteBtn = document.getElementById('contact-info-delete-btn');
     if (deleteBtn) deleteBtn.onclick = () => { modal.classList.add('hidden'); deleteContact(targetId); };
@@ -3061,6 +3250,19 @@
 
     modal.classList.remove('hidden');
   }
+
+  // Universal Cross-Device Touch & Click Delegation for Contact Avatar Big View
+  document.addEventListener('click', (e) => {
+    const avatarEl = e.target.closest('.item-avatar') || e.target.closest('.chat-avatar');
+    if (avatarEl) {
+      const listItem = avatarEl.closest('.list-item');
+      const targetId = listItem ? (listItem.getAttribute('data-contact-id') || listItem.getAttribute('data-chat-id')) : activeChatId;
+      if (targetId && typeof openContactInfoModal === 'function') {
+        e.stopPropagation();
+        openContactInfoModal(targetId);
+      }
+    }
+  }, { capture: true });
 
   window.openContactInfoModal = openContactInfoModal;
   window.openMediaLightbox = openMediaLightbox;

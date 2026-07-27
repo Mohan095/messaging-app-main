@@ -153,17 +153,23 @@ export function renderContactsList(filter = 'all', searchQuery = '') {
       </div>
       <div class="item-info">
         <div class="item-top-row">
-          <span class="item-name">${c.name}</span>
+          <span class="item-name" style="font-weight: 600; font-size: 15px; color: var(--text-primary);">${c.name}</span>
           <span class="item-time" style="color: ${c.favorite ? '#ffb703' : 'inherit'}">
             ${c.favorite ? '<i class="fas fa-star"></i>' : ''}
           </span>
         </div>
         <div class="item-bottom-row">
-          <span class="item-preview">${c.bio || c.mobile}</span>
+          <span class="item-preview" style="color: var(--brand-green); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-mobile-alt" style="font-size: 12px; color: var(--brand-green);"></i>
+            ${c.mobile}
+          </span>
         </div>
       </div>
-      <div class="item-actions" style="display: flex; align-items: center; gap: 4px;">
-        <button type="button" class="icon-btn delete-contact-btn" data-contact-id="${c.uid}" title="Delete Contact" style="width: 32px; height: 32px; font-size: 14px; color: #ef4444; background: transparent; border: none; cursor: pointer;">
+      <div class="item-actions" style="display: flex; align-items: center; gap: 8px;">
+        <button type="button" class="icon-btn call-contact-btn" data-contact-id="${c.uid}" title="Call ${c.name}" style="width: 36px; height: 36px; font-size: 15px; color: #ffffff; background: #008069; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0, 128, 105, 0.35);">
+          <i class="fas fa-phone-alt"></i>
+        </button>
+        <button type="button" class="icon-btn delete-contact-btn" data-contact-id="${c.uid}" title="Delete Contact" style="width: 32px; height: 32px; font-size: 13px; color: #ef4444; background: rgba(239, 68, 68, 0.1); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">
           <i class="fas fa-trash-alt"></i>
         </button>
       </div>
@@ -175,6 +181,22 @@ export function renderContactsList(filter = 'all', searchQuery = '') {
 
 function setupContactActionEvents(container) {
   container.onclick = (e) => {
+    const callBtn = e.target.closest('.call-contact-btn');
+    if (callBtn) {
+      e.stopPropagation();
+      const contactId = callBtn.getAttribute('data-contact-id');
+      const { contacts } = store.getState();
+      const contact = contacts.find((c) => c.uid === contactId);
+      if (contact) {
+        if (typeof window.showToastAlert === 'function') {
+          window.showToastAlert(`Calling ${contact.name} (${contact.mobile})...`, 'info');
+        }
+        if (typeof window.startCall === 'function') {
+          window.startCall(false);
+        }
+      }
+      return;
+    }
     const deleteBtn = e.target.closest('.delete-contact-btn');
     if (deleteBtn) {
       e.stopPropagation();
