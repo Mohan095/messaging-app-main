@@ -2578,24 +2578,6 @@
     renderMessages();
     renderChatsList();
     playMessageAudioAlert();
-
-    // Trigger user-to-user auto response for live notification view testing
-    if (activeChatType === 'private' && activeChatId) {
-      const targetId = activeChatId;
-      const contactObj = contacts.find(c => c.uid === targetId);
-      if (contactObj) {
-        setTimeout(() => {
-          const sampleReplies = [
-            `Got your message! I am reviewing it right now. 👍`,
-            `Thanks for reaching out! Let's talk soon. 😊`,
-            `Received: "${msgData.text || 'media'}". Thanks!`,
-            `Hey ${currentUser.name}! Message received loud and clear. 🚀`
-          ];
-          const replyText = sampleReplies[Math.floor(Math.random() * sampleReplies.length)];
-          receiveIncomingUserMessage(targetId, replyText, contactObj.name);
-        }, 1500);
-      }
-    }
   }
 
   function receiveIncomingUserMessage(chatId, text, senderName = 'Contact') {
