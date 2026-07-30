@@ -228,6 +228,62 @@
   }
 }
 
+/* Responsive Scaling for Mobile & Small Screen Displays (<480px) */
+@media screen and (max-width: 480px) {
+  .splash-content {
+    padding: 24px 16px;
+    max-width: 340px;
+  }
+  .splash-logo-wrapper {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 18px;
+  }
+  .splash-logo {
+    width: 68px;
+    height: 68px;
+    font-size: 30px;
+  }
+  .splash-title {
+    font-size: 22px;
+  }
+  .splash-subtitle {
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+  .splash-progress-track {
+    max-width: 220px;
+    height: 5px;
+  }
+  .splash-security {
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+}
+
+/* Responsive Scaling for High-res & Desktop Displays (>1400px) */
+@media screen and (min-width: 1400px) {
+  .splash-logo-wrapper {
+    width: 130px;
+    height: 130px;
+  }
+  .splash-logo {
+    width: 96px;
+    height: 96px;
+    font-size: 44px;
+  }
+  .splash-title {
+    font-size: 32px;
+  }
+  .splash-subtitle {
+    font-size: 15px;
+  }
+  .splash-progress-track {
+    max-width: 300px;
+    height: 7px;
+  }
+}
+
 /* Base White & Green Navigation & Header Accents */
 .nav-rail {
   background: #008069 !important;

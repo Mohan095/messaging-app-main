@@ -2632,17 +2632,17 @@
         const fileSize = msg.fileSize || '';
         const uploadDate = msg.timestamp ? new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
         contentHtml = `
-          <div class="message-media" style="position: relative; border-radius: 10px; overflow: hidden; display: inline-block;">
-            <img src="${imgUrl}" alt="${escapeHtml(fileName)}" style="max-width: 280px; max-height: 260px; object-fit: cover; cursor: pointer; display: block; border-radius: 10px;" onclick="window.openMediaLightbox('${imgUrl}', 'image', '${escapeHtml(msg.text || 'Image')}', '${escapeHtml(fileName)}', '${uploadDate}')">
-            <a href="${imgUrl}" download="${escapeHtml(fileName)}" target="_blank" title="Download Image" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0, 0, 0, 0.65); color: #ffffff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: background 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" onclick="event.stopPropagation();">
+          <div class="message-media" style="position: relative; border-radius: 12px; overflow: hidden; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.12);">
+            <img src="${imgUrl}" alt="${escapeHtml(fileName)}" style="max-width: 280px; max-height: 260px; object-fit: cover; cursor: pointer; display: block; border-radius: 12px;" onclick="window.openMediaLightbox('${imgUrl}', 'image', '${escapeHtml(msg.text || 'Image')}', '${escapeHtml(fileName)}', '${uploadDate}')">
+            <button type="button" title="Download Image" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0, 0, 0, 0.75); color: #ffffff; width: 34px; height: 34px; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s, background 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.4);" onclick="event.stopPropagation(); window.downloadMediaFile('${imgUrl}', '${escapeHtml(fileName)}');">
               <i class="fas fa-download" style="font-size: 14px;"></i>
-            </a>
+            </button>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px;">
-            <span style="opacity: 0.8;">${escapeHtml(fileName)} ${fileSize ? `(${fileSize})` : ''}</span>
-            <a href="${imgUrl}" download="${escapeHtml(fileName)}" target="_blank" style="color: var(--brand-green); text-decoration: underline; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" onclick="event.stopPropagation();">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 11.5px;">
+            <span style="opacity: 0.85; font-weight: 500;">${escapeHtml(fileName)} ${fileSize ? `(${fileSize})` : ''}</span>
+            <button type="button" style="color: var(--brand-green); background: none; border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; text-decoration: underline;" onclick="event.stopPropagation(); window.downloadMediaFile('${imgUrl}', '${escapeHtml(fileName)}');">
               <i class="fas fa-download"></i> Download
-            </a>
+            </button>
           </div>
         `;
       } else if (msg.type === 'video') {
@@ -3884,6 +3884,38 @@
     initSplashScreenAnimation();
   }
 
+  async function downloadMediaFile(url, fileName) {
+    if (!url) return;
+    try {
+      if (typeof window.showToastAlert === 'function') {
+        window.showToastAlert(`Downloading ${fileName || 'file'}...`, 'info', 2000);
+      }
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      if (typeof window.showToastAlert === 'function') {
+        window.showToastAlert(`Downloaded ${fileName || 'file'} successfully! 📥`, 'success');
+      }
+    } catch (err) {
+      console.warn("Direct download notice, opening URL:", err);
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.download = fileName || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }
+
+  window.downloadMediaFile = downloadMediaFile;
   window.openContactInfoModal = openContactInfoModal;
   window.openMediaLightbox = openMediaLightbox;
   window.openMediaLinksDocsModal = openMediaLinksDocsModal;
