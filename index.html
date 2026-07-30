@@ -416,23 +416,7 @@
             <button class="icon-btn" id="header-search-btn" title="Search Messages"><i class="fas fa-search"></i></button>
             <button class="icon-btn" id="header-call-btn" title="Voice Call"><i class="fas fa-phone-alt"></i></button>
             <button class="icon-btn" id="header-video-btn" title="Video Call"><i class="fas fa-video"></i></button>
-            <div style="position: relative; display: inline-block;">
-              <button class="icon-btn" id="chat-header-menu-btn" title="Menu"><i class="fas fa-ellipsis-v"></i></button>
-              <div class="chat-header-dropdown hidden" id="chat-header-dropdown-menu" style="position: absolute; right: 0; top: 100%; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; min-width: 160px; padding: 8px 0; display: flex; flex-direction: column;">
-                <div class="dropdown-item" id="dropdown-chat-profile" style="padding: 10px 16px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px;">
-                  <i class="fas fa-user"></i> User Profile
-                </div>
-                <div class="dropdown-item" id="dropdown-chat-lock" style="padding: 10px 16px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px;">
-                  <i class="fas fa-lock"></i> Lock Chat
-                </div>
-                <div class="dropdown-item" id="dropdown-chat-block" style="padding: 10px 16px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px;">
-                  <i class="fas fa-ban"></i> Block Contact
-                </div>
-                <div class="dropdown-item" id="dropdown-chat-delete" style="padding: 10px 16px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; color: #ef4444;">
-                  <i class="fas fa-trash-alt"></i> Delete Chat
-                </div>
-              </div>
-            </div>
+            <button class="icon-btn" id="header-delete-btn" title="Delete Contact / Chat" style="color: #ef4444;"><i class="fas fa-trash-alt"></i></button>
           </div>
         </header>
 
@@ -863,25 +847,20 @@
           <div id="contact-info-bio" style="font-size: 14px; color: var(--text-primary); line-height: 1.4;">Hey there! I am using MD Chat Pro.</div>
         </div>
 
-        <!-- Shared Media Gallery (Image & Video Preview) -->
+        <!-- Shared Media Gallery (Image & Video Only View) -->
         <div>
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
             <span style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);"><i class="fas fa-photo-video" style="color: var(--brand-green); margin-right: 6px;"></i> Shared Photos & Videos</span>
             <span id="contact-info-media-count" style="font-size: 12px; color: var(--text-secondary);">0 items</span>
           </div>
 
-          <div id="contact-info-media-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 140px; overflow-y: auto;">
+          <div id="contact-info-media-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 180px; overflow-y: auto;">
             <!-- Media items rendered dynamically -->
           </div>
-
-          <!-- Click to Open Full Media, Links & Docs Page View -->
-          <button type="button" class="btn-secondary" id="contact-info-view-media-docs-btn" style="width: 100%; margin-top: 10px; border: 1px solid var(--border-color); color: var(--brand-green); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; font-size: 13px; border-radius: 10px; background: var(--bg-panel); cursor: pointer;">
-            <i class="fas fa-folder-open"></i> View All Media, Links & Docs
-          </button>
         </div>
 
-        <!-- Call Action Options Bar -->
-        <div style="display: flex; gap: 10px; margin-top: 4px;">
+        <!-- Action Options Bar -->
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
           <button type="button" class="btn-primary" id="contact-info-call-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; font-size: 13.5px; border-radius: 12px;">
             <i class="fas fa-phone-alt"></i> Voice Call
           </button>
@@ -890,212 +869,11 @@
           </button>
         </div>
 
-        <!-- Danger Action Options: Block & Clear Chat Data -->
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
-          <button type="button" class="btn-secondary" id="contact-info-block-btn" style="width: 100%; border: 1px solid #f59e0b; color: #d97706; background: rgba(245, 158, 11, 0.08); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 13px; border-radius: 12px; cursor: pointer;">
-            <i class="fas fa-ban"></i> Block Contact
-          </button>
-
-          <button type="button" class="btn-secondary" id="contact-info-clear-data-btn" style="width: 100%; border: 1px solid #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.08); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 13px; border-radius: 12px; cursor: pointer;">
-            <i class="fas fa-eraser"></i> Clear Chat Messages & Data
-          </button>
-
-          <button type="button" class="btn-secondary" id="contact-info-delete-btn" style="width: 100%; border: 1px solid #94a3b8; color: var(--text-secondary); background: transparent; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 13px; border-radius: 12px; cursor: pointer;">
-            <i class="fas fa-trash-alt"></i> Delete Contact
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: MEDIA, LINKS & DOCS DEDICATED VIEW -->
-  <div class="modal-overlay hidden" id="media-links-docs-modal" style="z-index: 10002;">
-    <div class="modal-content" style="max-width: 520px; width: 94%; border-top: 4px solid var(--brand-green); border-radius: 20px;">
-      <div class="modal-header" style="justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-folder-open" style="color: var(--brand-green); font-size: 18px;"></i>
-          <span style="font-weight: 600; font-size: 16px; color: var(--text-primary);" id="media-docs-title">Media, Links & Docs</span>
-        </div>
-        <button class="icon-btn" id="close-media-docs-modal" title="Close"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body" style="padding: 16px 18px 20px 18px; display: flex; flex-direction: column; gap: 14px;">
-        <!-- 3 Tab Switchers -->
-        <div class="status-tab-pills" style="display: flex; gap: 6px; background: var(--bg-panel); padding: 4px; border-radius: 12px; border: 1px solid var(--border-color);">
-          <button type="button" class="status-tab-btn active" id="mld-tab-media" style="flex: 1; text-align: center;">
-            <i class="fas fa-image"></i> Media (<span id="mld-media-count">0</span>)
-          </button>
-          <button type="button" class="status-tab-btn" id="mld-tab-links" style="flex: 1; text-align: center;">
-            <i class="fas fa-link"></i> Links (<span id="mld-links-count">0</span>)
-          </button>
-          <button type="button" class="status-tab-btn" id="mld-tab-docs" style="flex: 1; text-align: center;">
-            <i class="fas fa-file-alt"></i> Docs (<span id="mld-docs-count">0</span>)
-          </button>
-        </div>
-
-        <!-- Search Bar & Sort Options -->
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <div class="search-input-wrapper" style="flex: 1;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="mld-search-input" placeholder="Search media, links, docs..." style="font-size: 13px;">
-          </div>
-          <select id="mld-sort-select" class="form-control" style="width: 120px; font-size: 12px; padding: 8px;">
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-          </select>
-        </div>
-
-        <!-- Tab 1: Media Container -->
-        <div id="mld-content-media" class="mld-tab-content">
-          <div id="mld-media-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;">
-          </div>
-        </div>
-
-        <!-- Tab 2: Links Container -->
-        <div id="mld-content-links" class="mld-tab-content hidden">
-          <div id="mld-links-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;">
-          </div>
-        </div>
-
-        <!-- Tab 3: Docs Container -->
-        <div id="mld-content-docs" class="mld-tab-content hidden">
-          <div id="mld-docs-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;">
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: LOCK CHAT PASSWORD SETUP & MANAGEMENT -->
-  <div class="modal-overlay hidden" id="lock-chat-modal" style="z-index: 10010;">
-    <div class="modal-content" style="max-width: 400px; width: 92%; border-top: 4px solid var(--brand-green); border-radius: 20px;">
-      <div class="modal-header" style="justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-user-lock" style="color: var(--brand-green); font-size: 20px;"></i>
-          <span style="font-weight: 600; font-size: 16px; color: var(--text-primary);" id="lock-chat-title">Lock Chat Settings</span>
-        </div>
-        <button class="icon-btn" id="close-lock-chat-modal" title="Close"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 16px;">
-        <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.4;">
-          Keep your chat private. Locked chats will be hidden and require a 4-digit passcode to open.
-        </p>
-
-        <form id="lock-chat-form" style="display: flex; flex-direction: column; gap: 14px;">
-          <div class="form-group">
-            <label style="font-size: 12px; font-weight: 600; color: var(--brand-green); text-transform: uppercase; margin-bottom: 4px; display: block;">Create 4-Digit PIN</label>
-            <input type="password" id="lock-chat-pin-input" class="form-control" maxlength="4" pattern="[0-9]{4}" placeholder="e.g. 1234" inputmode="numeric" required style="letter-spacing: 6px; font-size: 20px; text-align: center; font-weight: 700;">
-          </div>
-          <div class="form-group">
-            <label style="font-size: 12px; font-weight: 600; color: var(--brand-green); text-transform: uppercase; margin-bottom: 4px; display: block;">Confirm 4-Digit PIN</label>
-            <input type="password" id="lock-chat-confirm-input" class="form-control" maxlength="4" pattern="[0-9]{4}" placeholder="e.g. 1234" inputmode="numeric" required style="letter-spacing: 6px; font-size: 20px; text-align: center; font-weight: 700;">
-          </div>
-          <button type="submit" class="btn-primary" id="save-lock-pin-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600; border-radius: 12px;">
-            <i class="fas fa-lock" style="margin-right: 6px;"></i> Enable & Save Passcode
-          </button>
-        </form>
-
-        <div id="lock-chat-active-controls" class="hidden" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 14px;">
-          <button type="button" class="btn-secondary" id="disable-lock-chat-btn" style="width: 100%; border: 1px solid #f59e0b; color: #d97706; background: rgba(245, 158, 11, 0.08); font-weight: 600; padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            <i class="fas fa-lock-open"></i> Disable Lock Chat
-          </button>
-          <button type="button" class="btn-secondary" id="forgot-lock-pin-btn" style="width: 100%; border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 12.5px; padding: 8px; border-radius: 10px; text-decoration: underline; background: transparent;">
-            Forgot Password? Reset Verification
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: PASSCODE UNLOCK SCREEN (ENTER 4-DIGIT PIN TO ACCESS CHAT) -->
-  <div class="modal-overlay hidden" id="lock-chat-passcode-modal" style="z-index: 10020; background: rgba(0, 0, 0, 0.85);">
-    <div class="modal-content" style="max-width: 360px; width: 90%; border-top: 4px solid var(--brand-green); border-radius: 24px; text-align: center;">
-      <div class="modal-body" style="padding: 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
-        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 128, 105, 0.15); display: flex; align-items: center; justify-content: center; color: var(--brand-green); font-size: 26px;">
-          <i class="fas fa-lock"></i>
-        </div>
-        <div>
-          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Chat Locked</h3>
-          <p style="margin: 6px 0 0 0; font-size: 13px; color: var(--text-secondary);" id="passcode-modal-subtitle">Enter 4-digit passcode to unlock conversation</p>
-        </div>
-
-        <div style="width: 100%;">
-          <input type="password" id="unlock-passcode-input" maxlength="4" pattern="[0-9]{4}" placeholder="• • • •" inputmode="numeric" style="width: 80%; padding: 12px; font-size: 28px; text-align: center; letter-spacing: 12px; border-radius: 12px; border: 2px solid var(--brand-green); background: var(--bg-panel); color: var(--text-primary); font-weight: 700;">
-        </div>
-
-        <div style="display: flex; gap: 10px; width: 100%; margin-top: 8px;">
-          <button type="button" class="btn-secondary" id="cancel-unlock-btn" style="flex: 1; padding: 10px; border-radius: 10px;">Cancel</button>
-          <button type="button" class="btn-primary" id="submit-unlock-btn" style="flex: 1; padding: 10px; border-radius: 10px;">Unlock</button>
-        </div>
-
-        <button type="button" id="passcode-forgot-link" style="background: none; border: none; color: var(--brand-green); font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 4px;">
-          Forgot Passcode?
+        <button type="button" class="btn-secondary" id="contact-info-delete-btn" style="width: 100%; border: 1px solid #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.08); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; font-size: 13px; border-radius: 12px;">
+          <i class="fas fa-trash-alt"></i> Delete Contact
         </button>
       </div>
     </div>
-  </div>
-
-  <!-- MODAL: BLOCK CONTACT CONFIRMATION -->
-  <div class="modal-overlay hidden" id="block-contact-modal" style="z-index: 10015;">
-    <div class="modal-content" style="max-width: 380px; width: 90%; border-top: 4px solid #ef4444; border-radius: 20px; text-align: center;">
-      <div class="modal-body" style="padding: 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 24px;">
-          <i class="fas fa-user-slash"></i>
-        </div>
-        <div>
-          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);" id="block-modal-title">Block Contact?</h3>
-          <p style="margin: 8px 0 0 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.4;">
-            Do you want to permanently block this contact? Blocked contacts will not be able to call you or send you messages.
-          </p>
-        </div>
-
-        <div style="display: flex; gap: 10px; width: 100%; margin-top: 6px;">
-          <button type="button" class="btn-secondary" id="cancel-block-btn" style="flex: 1; padding: 11px; border-radius: 10px; font-weight: 600;">Cancel</button>
-          <button type="button" class="btn-primary" id="confirm-block-btn" style="flex: 1; padding: 11px; border-radius: 10px; background: #ef4444; font-weight: 600;">Block</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: DELETE CHAT OPTIONS -->
-  <div class="modal-overlay hidden" id="delete-chat-modal" style="z-index: 10016;">
-    <div class="modal-content" style="max-width: 400px; width: 90%; border-top: 4px solid #ef4444; border-radius: 20px;">
-      <div class="modal-header" style="justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px; color: #ef4444;">
-          <i class="fas fa-trash-alt" style="font-size: 18px;"></i>
-          <span style="font-weight: 600; font-size: 16px; color: var(--text-primary);">Delete Chat</span>
-        </div>
-        <button class="icon-btn" id="close-delete-chat-modal" title="Close"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
-        <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0; line-height: 1.4;">
-          Choose how you would like to clear this conversation:
-        </p>
-
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <button type="button" class="btn-secondary" id="btn-delete-for-me" style="padding: 12px; border-radius: 12px; text-align: left; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-color);">
-            <i class="fas fa-user-minus" style="font-size: 18px; color: var(--brand-green);"></i>
-            <div>
-              <div style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Delete For Me</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Remove chat history and messages from your view</div>
-            </div>
-          </button>
-
-          <button type="button" class="btn-secondary" id="btn-delete-entire-chat" style="padding: 12px; border-radius: 12px; text-align: left; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05);">
-            <i class="fas fa-trash-restore-alt" style="font-size: 18px; color: #ef4444;"></i>
-            <div>
-              <div style="font-weight: 600; font-size: 14px; color: #ef4444;">Delete Entire Conversation</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Permanently wipe all messages, media references, & cloud records</div>
-            </div>
-          </button>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
-          <button type="button" class="btn-secondary" id="cancel-delete-modal-btn" style="padding: 8px 16px; border-radius: 8px;">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL: MY USER PROFILE BIG VIEW & EDIT MODAL -->
   <div class="modal-overlay hidden" id="profile-drawer" style="z-index: 10005;">
     <div class="modal-content profile-drawer-card" style="max-width: 440px; width: 92%; border-top: 4px solid var(--brand-green); border-radius: 24px;">
