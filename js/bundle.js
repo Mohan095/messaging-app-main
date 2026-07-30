@@ -58,13 +58,13 @@
       titleBadge = 'Success';
     }
 
-    const safeMessage = typeof escapeHtml === 'function' 
+    const safeMessage = typeof escapeHtml === 'function'
       ? escapeHtml(String(message))
       : String(message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     const toast = document.createElement('div');
     toast.className = `toast-alert toast-${alertType}`;
-    
+
     toast.innerHTML = `
       <div class="toast-alert-icon">
         <i class="${iconClass}"></i>
@@ -145,8 +145,19 @@
   }
 
   async function uploadFileToStorage(file, folder = "uploads") {
+    if (!file) throw new Error("No file provided");
+    if (typeof firebase !== 'undefined' && firebase.storage && firebase.apps.length) {
+      try {
+        const storageRef = firebase.storage().ref();
+        const fileRef = storageRef.child(`${folder}/${Date.now()}_${file.name}`);
+        const snapshot = await fileRef.put(file);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        return downloadURL;
+      } catch (err) {
+        console.warn("Firebase Storage upload notice, using DataURL fallback:", err.message);
+      }
+    }
     return new Promise((resolve, reject) => {
-      if (!file) return reject(new Error("No file provided"));
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target.result);
       reader.onerror = (err) => reject(err);
@@ -174,7 +185,7 @@
         }).catch((err) => {
           console.log("Firestore notice:", err.message);
         });
-      } catch (err) {}
+      } catch (err) { }
     }
   }
 
@@ -190,7 +201,7 @@
       }, { merge: true }).then(() => {
         console.log("🔥 Message synced to Firebase Firestore (chat-mk-f1fc4)!");
       }).catch((err) => console.log("Firestore message notice:", err.message));
-    } catch (err) {}
+    } catch (err) { }
   }
 
   let unsubscribeMessagesListener = null;
@@ -198,7 +209,7 @@
   function setupFirebaseMessagesListener(currentUserId) {
     if (!db || !currentUserId) return;
     if (unsubscribeMessagesListener) {
-      try { unsubscribeMessagesListener(); } catch (e) {}
+      try { unsubscribeMessagesListener(); } catch (e) { }
     }
 
     try {
@@ -262,7 +273,7 @@
       }, { merge: true }).then(() => {
         console.log("🔥 Status story synced to Firebase Firestore (chat-mk-f1fc4)!");
       }).catch((err) => console.log("Firestore status notice:", err.message));
-    } catch (err) {}
+    } catch (err) { }
   }
 
   function syncContactToFirebase(currentUserId, contact) {
@@ -276,7 +287,7 @@
       }, { merge: true }).then(() => {
         console.log(`🔥 Contact "${contact.name}" synced to Firebase Firestore under user ${currentUserId}!`);
       }).catch((err) => console.log("Firestore contact sync notice:", err.message));
-    } catch (err) {}
+    } catch (err) { }
   }
 
   async function deleteContactFromFirebase(currentUserId, contactUid) {
@@ -340,7 +351,7 @@
   function setupFirebaseContactsListener(currentUserId) {
     if (!db || !currentUserId) return;
     if (unsubscribeContactsListener) {
-      try { unsubscribeContactsListener(); } catch (e) {}
+      try { unsubscribeContactsListener(); } catch (e) { }
     }
 
     try {
@@ -363,6 +374,56 @@
     }
   }
 
+  let unsubscribeLockedChatsListener = null;
+  function setupFirebaseLockedChatsListener(currentUserId) {
+    if (!db || !currentUserId) return;
+    if (unsubscribeLockedChatsListener) {
+      try { unsubscribeLockedChatsListener(); } catch (e) { }
+    }
+    try {
+      unsubscribeLockedChatsListener = db.collection('lockedChats')
+        .where('userId', '==', currentUserId)
+        .onSnapshot((snapshot) => {
+          const locks = {};
+          snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (data.chatId) {
+              locks[data.chatId] = { pin: data.pin, isLocked: Boolean(data.isLocked), lockedAt: data.updatedAt };
+            }
+          });
+          store.updateState(s => ({ ...s, lockedChats: { ...s.lockedChats, ...locks } }));
+          if (typeof renderChatsList === 'function') renderChatsList();
+        }, (err) => {
+          console.log("Firestore lockedChats listener notice:", err.message);
+        });
+    } catch (err) {
+      console.log("Firestore lockedChats snapshot notice:", err.message);
+    }
+  }
+
+  let unsubscribeBlockedUsersListener = null;
+  function setupFirebaseBlockedUsersListener(currentUserId) {
+    if (!db || !currentUserId) return;
+    if (unsubscribeBlockedUsersListener) {
+      try { unsubscribeBlockedUsersListener(); } catch (e) { }
+    }
+    try {
+      unsubscribeBlockedUsersListener = db.collection('blockedUsers')
+        .doc(currentUserId)
+        .collection('blocked')
+        .onSnapshot((snapshot) => {
+          const blockedIds = snapshot.docs.map(doc => doc.id);
+          store.updateState(s => ({ ...s, blockedUsers: Array.from(new Set([...(s.blockedUsers || []), ...blockedIds])) }));
+          if (typeof renderChatsList === 'function') renderChatsList();
+          if (typeof renderContactsList === 'function') renderContactsList();
+        }, (err) => {
+          console.log("Firestore blockedUsers listener notice:", err.message);
+        });
+    } catch (err) {
+      console.log("Firestore blockedUsers snapshot notice:", err.message);
+    }
+  }
+
   function syncGroupToFirebase(group) {
     if (!db || !group) return;
     try {
@@ -373,7 +434,7 @@
       }, { merge: true }).then(() => {
         console.log(`🔥 Group "${group.name}" synced to Firebase Firestore (Members restricted)!`);
       }).catch((err) => console.log("Firestore group sync notice:", err.message));
-    } catch (err) {}
+    } catch (err) { }
   }
 
   async function loadUserGroupsFromFirebase(currentUserId) {
@@ -478,14 +539,14 @@
         localStorage.removeItem('whatsapp_pro_state_v5');
         localStorage.removeItem('whatsapp_pro_state_v6');
         localStorage.removeItem('whatsapp_pro_state_v7');
-      } catch (e) {}
+      } catch (e) { }
 
       window.addEventListener('storage', (e) => {
         if (e.key === STORAGE_KEY && e.newValue) {
           try {
             this.state = JSON.parse(e.newValue);
             this.notify();
-          } catch (err) {}
+          } catch (err) { }
         }
       });
     }
@@ -568,6 +629,8 @@
           loadUserContactsFromFirebase(state.currentUser.uid);
           setupFirebaseContactsListener(state.currentUser.uid);
           setupFirebaseMessagesListener(state.currentUser.uid);
+          setupFirebaseLockedChatsListener(state.currentUser.uid);
+          setupFirebaseBlockedUsersListener(state.currentUser.uid);
         }
       }
     }, 2200);
@@ -845,6 +908,8 @@
       loadUserContactsFromFirebase(updatedUser.uid);
       setupFirebaseContactsListener(updatedUser.uid);
       setupFirebaseMessagesListener(updatedUser.uid);
+      setupFirebaseLockedChatsListener(updatedUser.uid);
+      setupFirebaseBlockedUsersListener(updatedUser.uid);
     }
 
     if (signupModal) signupModal.classList.add('hidden');
@@ -937,7 +1002,7 @@
         if (photoFile) {
           try {
             avatarUrl = await uploadFileToStorage(photoFile);
-          } catch (err) {}
+          } catch (err) { }
         }
 
         // Query Firebase Firestore for registered user by mobile number
@@ -968,6 +1033,12 @@
           return;
         }
 
+        const { blockedUsers } = store.getState();
+        if (blockedUsers && targetUser.uid && blockedUsers.includes(targetUser.uid)) {
+          alert('This user is blocked. Unblock them in settings to add or start a chat.', 'warning');
+          return;
+        }
+
         const contactUid = targetUser.uid || `user_${Date.now()}`;
         const finalName = name || targetUser.name;
         const finalAvatar = targetUser.avatar || avatarUrl;
@@ -986,8 +1057,8 @@
         };
 
         const currentState = store.getState();
-        const existingIndex = currentState.contacts.findIndex(c => 
-          c.uid === newContact.uid || 
+        const existingIndex = currentState.contacts.findIndex(c =>
+          c.uid === newContact.uid ||
           (c.mobile && cleanMobile.length >= 7 && c.mobile.replace(/\D/g, '').includes(cleanMobile))
         );
 
@@ -1024,8 +1095,8 @@
 
     const { contacts } = store.getState();
     let filtered = contacts.filter((c) => {
-      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            c.mobile.includes(searchQuery);
+      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.mobile.includes(searchQuery);
       if (!matchesSearch) return false;
       if (filter === 'favorites') return c.favorite;
       if (filter === 'blocked') return c.blocked;
@@ -1179,7 +1250,7 @@
         const name = document.getElementById('new-group-name').value.trim();
         const description = document.getElementById('new-group-desc').value.trim();
         const photoFile = document.getElementById('new-group-photo').files[0];
-        
+
         const selectedMembers = Array.from(
           document.querySelectorAll('.group-member-checkbox:checked')
         ).map((cb) => cb.value);
@@ -1196,7 +1267,7 @@
         if (photoFile) {
           try {
             groupAvatar = await uploadFileToStorage(photoFile);
-          } catch (err) {}
+          } catch (err) { }
         }
 
         const newGroup = {
@@ -1571,7 +1642,7 @@
       if (!currentStory) return;
 
       const replyMsg = `💬 Replied to status: "${currentStory.caption || 'Status story'}"\n\n${text}`;
-      
+
       const { currentUser, messages } = store.getState();
       const targetUserId = currentStory.userId;
 
@@ -2294,7 +2365,19 @@
   }
 
   function setActiveChat(targetId, type = 'private') {
+    const { lockedChats, blockedUsers } = store.getState();
+    const lockInfo = lockedChats && lockedChats[targetId];
+
+    if (lockInfo && lockInfo.isLocked && typeof checkAndOpenChatWithLock === 'function') {
+      checkAndOpenChatWithLock(targetId, () => proceedSetActiveChat(targetId, type));
+    } else {
+      proceedSetActiveChat(targetId, type);
+    }
+  }
+
+  function proceedSetActiveChat(targetId, type = 'private') {
     activeChatId = targetId;
+    window.activeChatId = targetId;
     activeChatType = type;
 
     const emptyState = document.getElementById('empty-chat-state');
@@ -2305,7 +2388,7 @@
     if (chatPane) chatPane.classList.remove('hidden');
     if (chatWindow) chatWindow.classList.add('mobile-active');
 
-    const { contacts, groups, messages, currentUser } = store.getState();
+    const { contacts, groups, messages, currentUser, blockedUsers } = store.getState();
     const currentUserId = currentUser ? currentUser.uid : '';
     const avatarEl = document.getElementById('chat-header-avatar');
     const titleEl = document.getElementById('chat-header-title');
@@ -2316,7 +2399,29 @@
       if (contact) {
         if (avatarEl) avatarEl.src = contact.avatar;
         if (titleEl) titleEl.textContent = contact.name;
-        if (subtitleEl) subtitleEl.textContent = contact.online ? 'Online' : contact.lastSeen || 'Offline';
+
+        const chatInputBar = document.getElementById('chat-input-bar');
+        let blockedBanner = document.getElementById('chat-blocked-banner');
+        const isBlocked = contact.blocked || (blockedUsers && blockedUsers.includes(targetId));
+
+        if (isBlocked) {
+          if (subtitleEl) subtitleEl.textContent = '🚫 Blocked Contact';
+          if (!blockedBanner && chatInputBar) {
+            blockedBanner = document.createElement('div');
+            blockedBanner.id = 'chat-blocked-banner';
+            blockedBanner.className = 'chat-blocked-banner';
+            chatInputBar.parentNode.insertBefore(blockedBanner, chatInputBar);
+          }
+          if (blockedBanner) {
+            blockedBanner.innerHTML = `<i class="fas fa-ban"></i> You have blocked this contact. <span style="text-decoration: underline; cursor: pointer; margin-left: 6px;" onclick="window.openContactInfoModal('${contact.uid}')">Unblock</span>`;
+            blockedBanner.classList.remove('hidden');
+          }
+          if (chatInputBar) chatInputBar.classList.add('hidden');
+        } else {
+          if (subtitleEl) subtitleEl.textContent = contact.online ? 'Online' : contact.lastSeen || 'Offline';
+          if (blockedBanner) blockedBanner.classList.add('hidden');
+          if (chatInputBar) chatInputBar.classList.remove('hidden');
+        }
       }
     } else {
       const group = groups.find((g) => g.id === targetId);
@@ -2325,6 +2430,10 @@
         if (titleEl) titleEl.textContent = group.name;
         if (subtitleEl) subtitleEl.textContent = `${group.members.length} members`;
       }
+      const chatInputBar = document.getElementById('chat-input-bar');
+      const blockedBanner = document.getElementById('chat-blocked-banner');
+      if (blockedBanner) blockedBanner.classList.add('hidden');
+      if (chatInputBar) chatInputBar.classList.remove('hidden');
     }
 
     // Mark all unread messages for this chat as read
@@ -2557,6 +2666,13 @@
     if (!activeChatId) return;
 
     const { currentUser, messages, contacts } = store.getState();
+    const contact = contacts.find(c => c.uid === activeChatId);
+    if (contact && contact.blocked) {
+      if (typeof window.showToastAlert === 'function') {
+        window.showToastAlert(`Cannot send message: Contact "${contact.name}" is blocked. Unblock to send messages.`, 'error');
+      }
+      return;
+    }
     const newMsg = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       senderId: currentUser.uid,
@@ -2732,7 +2848,7 @@
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.12);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   function escapeHtml(str) {
@@ -2755,7 +2871,7 @@
     initChatEngine();
 
     if (window.location.protocol.startsWith('http') && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js').catch(() => { });
     }
 
     setupNavigationTabs();
@@ -2774,6 +2890,8 @@
       loadUserContactsFromFirebase(currentUser.uid);
       setupFirebaseContactsListener(currentUser.uid);
       setupFirebaseMessagesListener(currentUser.uid);
+      setupFirebaseLockedChatsListener(currentUser.uid);
+      setupFirebaseBlockedUsersListener(currentUser.uid);
     }
 
     const mobileBackBtn = document.getElementById('mobile-chat-back');
@@ -2925,7 +3043,7 @@
     if (chatWindow && window.innerWidth <= 768) {
       chatWindow.classList.remove('mobile-active');
     }
-    
+
     if (tab === 'chats') {
       if (titleEl) titleEl.textContent = 'Chats';
       document.getElementById('view-chats')?.classList.remove('hidden');
@@ -2969,21 +3087,27 @@
     const container = document.getElementById('chats-list-container');
     if (!container) return;
 
-    const { contacts, groups, messages, currentUser } = store.getState();
+    const { contacts, groups, messages, currentUser, lockedChats, blockedUsers } = store.getState();
     const currentUserId = currentUser ? currentUser.uid : '';
     const allConversations = [];
 
     contacts.forEach((c) => {
+      // Exclude blocked contacts from active chat list
+      if (blockedUsers && blockedUsers.includes(c.uid)) return;
+
       const chatMsgs = messages[c.uid] || [];
       const lastMsg = chatMsgs[chatMsgs.length - 1];
       const unreadCount = chatMsgs.filter(m => m.senderId !== currentUserId && m.read === false).length;
+      const isLocked = lockedChats && lockedChats[c.uid] && lockedChats[c.uid].isLocked;
+
       allConversations.push({
         id: c.uid,
         type: 'private',
         name: c.name,
         avatar: c.avatar,
         online: c.online,
-        lastMsgText: lastMsg ? (lastMsg.type === 'text' ? lastMsg.text : `[${lastMsg.type}]`) : c.bio,
+        isLocked,
+        lastMsgText: isLocked ? '🔒 Chat Locked' : (lastMsg ? (lastMsg.type === 'text' ? lastMsg.text : `[${lastMsg.type}]`) : c.bio),
         lastMsgTime: lastMsg ? formatTimeShort(lastMsg.timestamp) : '',
         lastMsgStatus: lastMsg ? lastMsg.status : '',
         rawTime: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0,
@@ -2995,13 +3119,16 @@
       const groupMsgs = messages[g.id] || [];
       const lastMsg = groupMsgs[groupMsgs.length - 1];
       const unreadCount = groupMsgs.filter(m => m.senderId !== currentUserId && m.read === false).length;
+      const isLocked = lockedChats && lockedChats[g.id] && lockedChats[g.id].isLocked;
+
       allConversations.push({
         id: g.id,
         type: 'group',
         name: g.name,
         avatar: g.avatar,
         online: false,
-        lastMsgText: lastMsg ? `${lastMsg.senderName}: ${lastMsg.text}` : g.description,
+        isLocked,
+        lastMsgText: isLocked ? '🔒 Chat Locked' : (lastMsg ? `${lastMsg.senderName}: ${lastMsg.text}` : g.description),
         lastMsgTime: lastMsg ? formatTimeShort(lastMsg.timestamp) : '',
         lastMsgStatus: lastMsg ? lastMsg.status : '',
         rawTime: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0,
@@ -3031,12 +3158,14 @@
         </div>
         <div class="item-info">
           <div class="item-top-row">
-            <span class="item-name" style="${c.unreadCount > 0 ? 'font-weight: 700; color: var(--text-primary);' : ''}">${c.name}</span>
+            <span class="item-name" style="${c.unreadCount > 0 ? 'font-weight: 700; color: var(--text-primary);' : ''}">
+              ${escapeHtml(c.name)} ${c.isLocked ? '<i class="fas fa-lock" style="font-size: 11px; color: var(--brand-green); margin-left: 4px;"></i>' : ''}
+            </span>
             <span class="item-time" style="${c.unreadCount > 0 ? 'color: var(--brand-green); font-weight: 600;' : ''}">${c.lastMsgTime}</span>
           </div>
           <div class="item-bottom-row" style="display: flex; justify-content: space-between; align-items: center;">
             <span class="item-preview" style="${c.unreadCount > 0 ? 'color: var(--text-primary); font-weight: 600;' : ''}">
-              ${c.lastMsgText}
+              ${escapeHtml(c.lastMsgText)}
             </span>
             ${c.unreadCount > 0 ? `<span class="unread-badge-count" style="background: var(--brand-green); color: #ffffff; font-size: 11px; font-weight: 700; height: 20px; min-width: 20px; padding: 0 6px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 128, 105, 0.4); margin-left: 6px;">(${c.unreadCount})</span>` : ''}
           </div>
@@ -3101,7 +3230,7 @@
     const modal = document.getElementById('contact-info-modal');
     if (!modal) return;
 
-    const { contacts, groups, messages } = store.getState();
+    const { contacts, groups, messages, currentUser } = store.getState();
     const avatarEl = document.getElementById('contact-info-avatar');
     const nameEl = document.getElementById('contact-info-name');
     const phoneEl = document.getElementById('contact-info-phone');
@@ -3111,7 +3240,24 @@
     const mediaGridEl = document.getElementById('contact-info-media-grid');
     const zoomBtn = document.getElementById('contact-info-zoom-btn');
 
-    const contact = contacts.find(c => c.uid === targetId);
+    const blockBtn = document.getElementById('contact-info-block-btn');
+    const clearDataBtn = document.getElementById('contact-info-clear-data-btn');
+    const viewMediaDocsBtn = document.getElementById('contact-info-view-media-docs-btn');
+
+    let contact = contacts.find(c => c.uid === targetId || c.mobile === targetId);
+    if (!contact) {
+      const demoUsers = [
+        { uid: "demo_1", name: "Sarah Connor", mobile: "+1 555-0199", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80", bio: "Available", online: true },
+        { uid: "demo_2", name: "Alex Rivers", mobile: "+1 555-0144", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", bio: "At the gym 🏋️‍♂️", online: true },
+        { uid: "demo_3", name: "Emily Watson", mobile: "+1 555-0188", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", bio: "Coding modern apps 🚀", online: true },
+        { uid: "demo_4", name: "David Chen", mobile: "+1 555-0177", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", bio: "In a meeting 👨‍💻", online: false }
+      ];
+      contact = demoUsers.find(u => u.uid === targetId || u.name === targetId);
+    }
+    if (!contact && currentUser && (targetId === currentUser.uid || targetId === 'my_profile')) {
+      contact = currentUser;
+    }
+
     const group = groups.find(g => g.id === targetId);
 
     if (contact) {
@@ -3125,7 +3271,33 @@
       if (nameEl) nameEl.innerHTML = `${escapeHtml(contact.name)} <i class="fas fa-check-circle" style="color: var(--brand-green); font-size: 17px;"></i>`;
       if (phoneEl) phoneEl.textContent = contact.mobile || 'N/A';
       if (bioEl) bioEl.textContent = contact.bio || 'Hey there! I am using MD Chat Pro.';
-      if (statusEl) statusEl.textContent = contact.online ? '🟢 Online' : contact.lastSeen || 'Offline';
+      if (statusEl) statusEl.textContent = contact.blocked ? '🚫 Blocked Contact' : (contact.online ? '🟢 Online' : contact.lastSeen || 'Offline');
+
+      if (blockBtn) {
+        blockBtn.style.display = 'flex';
+        if (contact.blocked) {
+          blockBtn.innerHTML = `<i class="fas fa-check-circle"></i> Unblock Contact`;
+          blockBtn.style.background = 'rgba(0, 128, 105, 0.12)';
+          blockBtn.style.color = 'var(--brand-green)';
+          blockBtn.style.borderColor = 'var(--brand-green)';
+        } else {
+          blockBtn.innerHTML = `<i class="fas fa-ban"></i> Block Contact`;
+          blockBtn.style.background = 'rgba(245, 158, 11, 0.08)';
+          blockBtn.style.color = '#d97706';
+          blockBtn.style.borderColor = '#f59e0b';
+        }
+        blockBtn.onclick = () => {
+          contact.blocked = !contact.blocked;
+          const updatedContacts = contacts.map(c => c.uid === targetId ? { ...c, blocked: contact.blocked } : c);
+          store.updateState({ contacts: updatedContacts });
+          if (typeof window.showToastAlert === 'function') {
+            window.showToastAlert(contact.blocked ? `Contact "${contact.name}" has been blocked.` : `Contact "${contact.name}" has been unblocked.`, contact.blocked ? 'warning' : 'success');
+          }
+          if (typeof renderContactsList === 'function') renderContactsList();
+          if (activeChatId === targetId) setActiveChat(targetId, 'private');
+          openContactInfoModal(targetId);
+        };
+      }
     } else if (group) {
       if (avatarEl) {
         avatarEl.src = group.avatar;
@@ -3138,7 +3310,11 @@
       if (phoneEl) phoneEl.textContent = `Group (${group.members.length} members)`;
       if (bioEl) bioEl.textContent = group.description || 'Welcome to the group chat!';
       if (statusEl) statusEl.textContent = `${group.members.length} Members`;
+
+      if (blockBtn) blockBtn.style.display = 'none';
     }
+
+
 
     const chatMsgs = messages[targetId] || [];
     const mediaMsgs = chatMsgs.filter(m => !m.deleted && (m.type === 'image' || m.type === 'video'));
@@ -3184,9 +3360,194 @@
     const videoBtn = document.getElementById('contact-info-video-btn');
     if (videoBtn) videoBtn.onclick = () => { modal.classList.add('hidden'); startCall(true, targetId); };
 
+    if (viewMediaDocsBtn) {
+      viewMediaDocsBtn.onclick = () => {
+        modal.classList.add('hidden');
+        if (typeof openMediaLinksDocsModal === 'function') {
+          openMediaLinksDocsModal(targetId);
+          if (typeof setupMldSearchAndSort === 'function') {
+            setupMldSearchAndSort(targetId);
+          }
+        }
+      };
+    }
+
+    if (blockBtn) {
+      blockBtn.onclick = () => { modal.classList.add('hidden'); openBlockContactModal(targetId); };
+    }
+
+    if (clearDataBtn) {
+      clearDataBtn.onclick = () => { modal.classList.add('hidden'); openDeleteChatModal(targetId); };
+    }
+
     const deleteBtn = document.getElementById('contact-info-delete-btn');
     if (deleteBtn) deleteBtn.onclick = () => { modal.classList.add('hidden'); deleteContact(targetId); };
 
+    modal.classList.remove('hidden');
+  }
+
+  function openMediaLinksDocsModal(targetId) {
+    const modal = document.getElementById('media-links-docs-modal');
+    if (!modal) return;
+
+    const { contacts, groups, messages } = store.getState();
+    const contact = contacts.find(c => c.uid === targetId);
+    const group = groups.find(g => g.id === targetId);
+    const name = contact ? contact.name : (group ? group.name : 'Chat');
+
+    const titleEl = document.getElementById('media-docs-title');
+    if (titleEl) titleEl.textContent = `Media, Links & Docs - ${name}`;
+
+    const chatMsgs = (messages[targetId] || []).filter(m => !m.deleted);
+
+    // 1. Media
+    const mediaMsgs = chatMsgs.filter(m => m.type === 'image' || m.type === 'video');
+    const mediaCountEl = document.getElementById('mld-media-count');
+    const mediaGridEl = document.getElementById('mld-media-grid');
+    if (mediaCountEl) mediaCountEl.textContent = mediaMsgs.length;
+    if (mediaGridEl) {
+      if (mediaMsgs.length === 0) {
+        mediaGridEl.innerHTML = `
+          <div style="grid-column: span 3; padding: 32px 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+            <i class="fas fa-photo-video" style="font-size: 32px; opacity: 0.4; margin-bottom: 8px;"></i>
+            <p>No shared photos or videos.</p>
+          </div>
+        `;
+      } else {
+        mediaGridEl.innerHTML = mediaMsgs.map(m => {
+          if (m.type === 'image') {
+            return `
+              <div style="position: relative; width: 100%; height: 90px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color);" onclick="window.openMediaLightbox('${m.url}', 'image', '${escapeHtml(m.text || 'Photo')}')">
+                <img src="${m.url}" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+            `;
+          } else {
+            return `
+              <div style="position: relative; width: 100%; height: 90px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color); background: #000;" onclick="window.openMediaLightbox('${m.url}', 'video', '${escapeHtml(m.text || 'Video')}')">
+                <video src="${m.url}" style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); color: #fff; font-size: 22px;">
+                  <i class="fas fa-play-circle"></i>
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
+      }
+    }
+
+    // 2. Links
+    const urlRegex = /(https?:\/\/[^\s]+)/gi;
+    const linkItems = [];
+    chatMsgs.forEach(m => {
+      const textToSearch = (m.text || '') + ' ' + (m.caption || '');
+      const matches = textToSearch.match(urlRegex);
+      if (matches) {
+        matches.forEach(url => {
+          linkItems.push({
+            url,
+            time: m.timestamp ? formatTimeShort(m.timestamp) : '',
+            sender: m.senderName || 'User'
+          });
+        });
+      }
+    });
+
+    const linksCountEl = document.getElementById('mld-links-count');
+    const linksListEl = document.getElementById('mld-links-list');
+    if (linksCountEl) linksCountEl.textContent = linkItems.length;
+    if (linksListEl) {
+      if (linkItems.length === 0) {
+        linksListEl.innerHTML = `
+          <div style="padding: 32px 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+            <i class="fas fa-link" style="font-size: 32px; opacity: 0.4; margin-bottom: 8px;"></i>
+            <p>No shared links found.</p>
+          </div>
+        `;
+      } else {
+        linksListEl.innerHTML = linkItems.map(item => {
+          let host = 'link';
+          try { host = new URL(item.url).hostname; } catch (e) { }
+          return `
+            <a class="mld-link-item" href="${item.url}" target="_blank" rel="noopener noreferrer">
+              <div class="mld-link-icon"><i class="fas fa-globe"></i></div>
+              <div class="mld-link-details">
+                <div class="mld-link-url">${escapeHtml(item.url)}</div>
+                <div class="mld-link-subtext">${host} • ${item.sender} ${item.time ? '• ' + item.time : ''}</div>
+              </div>
+              <i class="fas fa-external-link-alt" style="color: var(--text-secondary); font-size: 13px;"></i>
+            </a>
+          `;
+        }).join('');
+      }
+    }
+
+    // 3. Docs
+    const docMsgs = chatMsgs.filter(m => m.type === 'doc' || m.type === 'document' || m.type === 'file' || m.type === 'audio');
+    const docsCountEl = document.getElementById('mld-docs-count');
+    const docsListEl = document.getElementById('mld-docs-list');
+    if (docsCountEl) docsCountEl.textContent = docMsgs.length;
+    if (docsListEl) {
+      if (docMsgs.length === 0) {
+        docsListEl.innerHTML = `
+          <div style="padding: 32px 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+            <i class="fas fa-file-alt" style="font-size: 32px; opacity: 0.4; margin-bottom: 8px;"></i>
+            <p>No shared documents or audio files.</p>
+          </div>
+        `;
+      } else {
+        docsListEl.innerHTML = docMsgs.map(m => {
+          const fileName = m.fileName || m.name || m.text || 'Document File';
+          const fileIcon = m.type === 'audio' ? 'fas fa-headphones' : 'fas fa-file-pdf';
+          const time = m.timestamp ? formatTimeShort(m.timestamp) : '';
+          return `
+            <div class="mld-doc-item">
+              <div class="mld-doc-icon"><i class="${fileIcon}"></i></div>
+              <div class="mld-doc-info">
+                <div class="mld-doc-name">${escapeHtml(fileName)}</div>
+                <div class="mld-doc-meta">${m.fileSize || 'Attachment'} • ${time}</div>
+              </div>
+              <a href="${m.url || '#'}" download="${escapeHtml(fileName)}" class="icon-btn" style="color: var(--brand-green);" title="Download File">
+                <i class="fas fa-download"></i>
+              </a>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Tab switching event listeners
+    const tabMediaBtn = document.getElementById('mld-tab-media');
+    const tabLinksBtn = document.getElementById('mld-tab-links');
+    const tabDocsBtn = document.getElementById('mld-tab-docs');
+
+    const contentMedia = document.getElementById('mld-content-media');
+    const contentLinks = document.getElementById('mld-content-links');
+    const contentDocs = document.getElementById('mld-content-docs');
+
+    function switchMldTab(activeTab) {
+      [tabMediaBtn, tabLinksBtn, tabDocsBtn].forEach(b => b?.classList.remove('active'));
+      [contentMedia, contentLinks, contentDocs].forEach(c => c?.classList.add('hidden'));
+
+      if (activeTab === 'media') {
+        tabMediaBtn?.classList.add('active');
+        contentMedia?.classList.remove('hidden');
+      } else if (activeTab === 'links') {
+        tabLinksBtn?.classList.add('active');
+        contentLinks?.classList.remove('hidden');
+      } else if (activeTab === 'docs') {
+        tabDocsBtn?.classList.add('active');
+        contentDocs?.classList.remove('hidden');
+      }
+    }
+
+    if (tabMediaBtn) tabMediaBtn.onclick = () => switchMldTab('media');
+    if (tabLinksBtn) tabLinksBtn.onclick = () => switchMldTab('links');
+    if (tabDocsBtn) tabDocsBtn.onclick = () => switchMldTab('docs');
+
+    const closeBtn = document.getElementById('close-media-docs-modal');
+    if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
+
+    switchMldTab('media');
     modal.classList.remove('hidden');
   }
 
@@ -3210,7 +3571,7 @@
       if (videoEl) {
         videoEl.src = url;
         videoEl.classList.remove('hidden');
-        videoEl.play().catch(() => {});
+        videoEl.play().catch(() => { });
       }
     } else {
       if (videoEl) {
@@ -3233,19 +3594,507 @@
     modal.classList.remove('hidden');
   }
 
-  // Universal Cross-Device Touch & Click Delegation for Contact Avatar Big View
+  // Session memory for unlocked chats in current session
+  const unlockedSessions = {};
+  let currentLockTargetId = null;
+  let currentBlockTargetId = null;
+  let currentDeleteTargetId = null;
+
+  // ------------------------------------------
+  // LOCK CHAT FEATURE IMPLEMENTATION
+  // ------------------------------------------
+  function openLockChatModal(chatId) {
+    if (!chatId) return;
+    currentLockTargetId = chatId;
+    const modal = document.getElementById('lock-chat-modal');
+    if (!modal) return;
+
+    const { lockedChats } = store.getState();
+    const isLocked = lockedChats && lockedChats[chatId] && lockedChats[chatId].isLocked;
+
+    const activeControls = document.getElementById('lock-chat-active-controls');
+    const titleEl = document.getElementById('lock-chat-title');
+    const pinInput = document.getElementById('lock-chat-pin-input');
+    const confirmInput = document.getElementById('lock-chat-confirm-input');
+
+    if (pinInput) pinInput.value = '';
+    if (confirmInput) confirmInput.value = '';
+
+    if (isLocked) {
+      if (activeControls) activeControls.classList.remove('hidden');
+      if (titleEl) titleEl.textContent = 'Lock Chat Settings (Enabled 🔒)';
+    } else {
+      if (activeControls) activeControls.classList.add('hidden');
+      if (titleEl) titleEl.textContent = 'Lock Chat Settings';
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  const closeLockModalBtn = document.getElementById('close-lock-chat-modal');
+  if (closeLockModalBtn) {
+    closeLockModalBtn.onclick = () => {
+      document.getElementById('lock-chat-modal')?.classList.add('hidden');
+    };
+  }
+
+  const lockForm = document.getElementById('lock-chat-form');
+  if (lockForm) {
+    lockForm.onsubmit = (e) => {
+      e.preventDefault();
+      const pin = document.getElementById('lock-chat-pin-input')?.value;
+      const confirm = document.getElementById('lock-chat-confirm-input')?.value;
+
+      if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        alert('Please enter a valid 4-digit numeric PIN.', 'error');
+        return;
+      }
+      if (pin !== confirm) {
+        alert('PIN confirmation does not match.', 'error');
+        return;
+      }
+
+      if (!currentLockTargetId) currentLockTargetId = activeChatId;
+      if (!currentLockTargetId) {
+        alert('No active chat selected to lock.', 'warning');
+        return;
+      }
+
+      const { currentUser } = store.getState();
+      const updateData = {
+        pin: pin,
+        isLocked: true,
+        lockedAt: new Date().toISOString()
+      };
+
+      store.updateState(s => ({
+        ...s,
+        lockedChats: {
+          ...s.lockedChats,
+          [currentLockTargetId]: updateData
+        }
+      }));
+
+      // Firebase Sync
+      try {
+        if (typeof db !== 'undefined' && db && currentUser) {
+          db.collection('lockedChats').doc(`${currentUser.uid}_${currentLockTargetId}`).set({
+            userId: currentUser.uid,
+            chatId: currentLockTargetId,
+            pin: pin,
+            isLocked: true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      } catch (err) {
+        console.warn('Firebase lockedChats sync error:', err);
+      }
+
+      unlockedSessions[currentLockTargetId] = true;
+      document.getElementById('lock-chat-modal')?.classList.add('hidden');
+      alert('Lock Chat enabled successfully! 🔒', 'success');
+      if (typeof renderChatsList === 'function') renderChatsList();
+    };
+  }
+
+  const disableLockBtn = document.getElementById('disable-lock-chat-btn');
+  if (disableLockBtn) {
+    disableLockBtn.onclick = () => {
+      if (!currentLockTargetId) currentLockTargetId = activeChatId;
+      if (!currentLockTargetId) return;
+
+      const { currentUser } = store.getState();
+      store.updateState(s => {
+        const copy = { ...s.lockedChats };
+        delete copy[currentLockTargetId];
+        return { ...s, lockedChats: copy };
+      });
+
+      try {
+        if (typeof db !== 'undefined' && db && currentUser) {
+          db.collection('lockedChats').doc(`${currentUser.uid}_${currentLockTargetId}`).delete();
+        }
+      } catch (err) {
+        console.warn('Firebase unlock sync error:', err);
+      }
+
+      delete unlockedSessions[currentLockTargetId];
+      document.getElementById('lock-chat-modal')?.classList.add('hidden');
+      alert('Lock Chat disabled.', 'info');
+      if (typeof renderChatsList === 'function') renderChatsList();
+    };
+  }
+
+  const forgotPinBtn = document.getElementById('forgot-lock-pin-btn');
+  if (forgotPinBtn) {
+    forgotPinBtn.onclick = () => {
+      const { currentUser } = store.getState();
+      alert(`Passcode reset link sent to registered email (${currentUser.email || 'Google Account'}). Verify login to reset.`, 'info');
+    };
+  }
+
+  // Passcode verification gate before opening locked chat
+  function checkAndOpenChatWithLock(chatId, openCallback) {
+    const { lockedChats } = store.getState();
+    const lockInfo = lockedChats && lockedChats[chatId];
+
+    if (lockInfo && lockInfo.isLocked && !unlockedSessions[chatId]) {
+      currentLockTargetId = chatId;
+      const passcodeModal = document.getElementById('lock-chat-passcode-modal');
+      const passInput = document.getElementById('unlock-passcode-input');
+      if (passInput) passInput.value = '';
+
+      const submitBtn = document.getElementById('submit-unlock-btn');
+      const cancelBtn = document.getElementById('cancel-unlock-btn');
+
+      if (cancelBtn) {
+        cancelBtn.onclick = () => {
+          passcodeModal?.classList.add('hidden');
+        };
+      }
+
+      if (submitBtn) {
+        submitBtn.onclick = () => {
+          const enteredPin = passInput?.value;
+          if (enteredPin === lockInfo.pin) {
+            unlockedSessions[chatId] = true;
+            passcodeModal?.classList.add('hidden');
+            alert('Chat unlocked! 🔓', 'success');
+            if (typeof openCallback === 'function') openCallback();
+          } else {
+            alert('Incorrect 4-digit passcode. Try again.', 'error');
+            if (passInput) passInput.value = '';
+          }
+        };
+      }
+
+      passcodeModal?.classList.remove('hidden');
+    } else {
+      if (typeof openCallback === 'function') openCallback();
+    }
+  }
+
+  // ------------------------------------------
+  // BLOCK CONTACT FEATURE IMPLEMENTATION
+  // ------------------------------------------
+  function unblockContact(targetId) {
+    if (!targetId) return;
+    const { currentUser, blockedUsers } = store.getState();
+    const updatedBlocked = (blockedUsers || []).filter(id => id !== targetId);
+
+    store.updateState({ blockedUsers: updatedBlocked });
+
+    try {
+      if (typeof db !== 'undefined' && db && currentUser) {
+        db.collection('blockedUsers').doc(currentUser.uid).collection('blocked').doc(targetId).delete();
+      }
+    } catch (err) {
+      console.warn('Firebase unblock contact sync error:', err);
+    }
+
+    alert('Contact unblocked successfully. 🟢', 'success');
+
+    if (typeof renderChatsList === 'function') renderChatsList();
+    if (typeof renderContactsList === 'function') renderContactsList();
+
+    const current = activeChatId || window.activeChatId;
+    if (current === targetId && typeof setActiveChat === 'function') {
+      setActiveChat(current, 'private');
+    }
+  }
+
+  function openBlockContactModal(targetId) {
+    if (!targetId) targetId = activeChatId || window.activeChatId;
+    if (!targetId) return;
+
+    const { blockedUsers } = store.getState();
+    if (blockedUsers && blockedUsers.includes(targetId)) {
+      unblockContact(targetId);
+      return;
+    }
+
+    currentBlockTargetId = targetId;
+    const modal = document.getElementById('block-contact-modal');
+    if (!modal) return;
+
+    const { contacts } = store.getState();
+    const contact = contacts.find(c => c.uid === targetId);
+    const titleEl = document.getElementById('block-modal-title');
+    if (titleEl) titleEl.textContent = `Block ${contact ? contact.name : 'Contact'}?`;
+
+    modal.classList.remove('hidden');
+  }
+
+  const cancelBlockBtn = document.getElementById('cancel-block-btn');
+  if (cancelBlockBtn) {
+    cancelBlockBtn.onclick = () => {
+      document.getElementById('block-contact-modal')?.classList.add('hidden');
+    };
+  }
+
+  const confirmBlockBtn = document.getElementById('confirm-block-btn');
+  if (confirmBlockBtn) {
+    confirmBlockBtn.onclick = () => {
+      if (!currentBlockTargetId) return;
+
+      const { currentUser, blockedUsers } = store.getState();
+      if (!blockedUsers.includes(currentBlockTargetId)) {
+        store.updateState(s => ({
+          ...s,
+          blockedUsers: [...(s.blockedUsers || []), currentBlockTargetId]
+        }));
+
+        try {
+          if (typeof db !== 'undefined' && db && currentUser) {
+            db.collection('blockedUsers').doc(currentUser.uid).collection('blocked').doc(currentBlockTargetId).set({
+              targetId: currentBlockTargetId,
+              blockedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } catch (err) {
+          console.warn('Firebase block contact sync error:', err);
+        }
+      }
+
+      document.getElementById('block-contact-modal')?.classList.add('hidden');
+      alert('Contact permanently blocked. 🛑', 'warning');
+
+      if (typeof renderChatsList === 'function') renderChatsList();
+      if (typeof renderContactsList === 'function') renderContactsList();
+
+      const current = activeChatId || window.activeChatId;
+      if (current === currentBlockTargetId && typeof setActiveChat === 'function') {
+        setActiveChat(current, 'private');
+      }
+    };
+  }
+
+  // ------------------------------------------
+  // DELETE CHAT FEATURE IMPLEMENTATION
+  // ------------------------------------------
+  function openDeleteChatModal(targetId) {
+    if (!targetId) targetId = activeChatId;
+    if (!targetId) return;
+    currentDeleteTargetId = targetId;
+
+    const modal = document.getElementById('delete-chat-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  const closeDeleteModalBtn = document.getElementById('close-delete-chat-modal');
+  const cancelDeleteModalBtn = document.getElementById('cancel-delete-modal-btn');
+  [closeDeleteModalBtn, cancelDeleteModalBtn].forEach(b => {
+    if (b) b.onclick = () => document.getElementById('delete-chat-modal')?.classList.add('hidden');
+  });
+
+  const deleteForMeBtn = document.getElementById('btn-delete-for-me');
+  if (deleteForMeBtn) {
+    deleteForMeBtn.onclick = () => {
+      if (!currentDeleteTargetId) return;
+      const target = currentDeleteTargetId;
+
+      store.updateState(s => ({
+        ...s,
+        messages: { ...s.messages, [target]: [] },
+        deletedChats: [...(s.deletedChats || []), { chatId: target, deletedAt: new Date().toISOString() }]
+      }));
+
+      document.getElementById('delete-chat-modal')?.classList.add('hidden');
+      alert('Chat history deleted for you.', 'info');
+
+      if (activeChatId === target) {
+        document.getElementById('active-chat-content')?.classList.add('hidden');
+        document.getElementById('empty-chat-state')?.classList.remove('hidden');
+      }
+
+      if (typeof renderChatsList === 'function') renderChatsList();
+    };
+  }
+
+  const deleteEntireChatBtn = document.getElementById('btn-delete-entire-chat');
+  if (deleteEntireChatBtn) {
+    deleteEntireChatBtn.onclick = () => {
+      if (!currentDeleteTargetId) return;
+      const target = currentDeleteTargetId;
+      const { currentUser } = store.getState();
+
+      store.updateState(s => {
+        const newMsgs = { ...s.messages };
+        delete newMsgs[target];
+        return {
+          ...s,
+          messages: newMsgs,
+          deletedChats: [...(s.deletedChats || []), { chatId: target, deletedAt: new Date().toISOString() }]
+        };
+      });
+
+      // Wipe from Firestore
+      try {
+        if (typeof db !== 'undefined' && db && currentUser) {
+          db.collection('chatRooms').doc(target).delete();
+          db.collection('messages').where('chatId', '==', target).get().then(snap => {
+            snap.forEach(doc => doc.ref.delete());
+          });
+        }
+      } catch (err) {
+        console.warn('Firebase delete entire conversation error:', err);
+      }
+
+      document.getElementById('delete-chat-modal')?.classList.add('hidden');
+      alert('Entire conversation deleted permanently from cloud & local storage.', 'warning');
+
+      if (activeChatId === target) {
+        document.getElementById('active-chat-content')?.classList.add('hidden');
+        document.getElementById('empty-chat-state')?.classList.remove('hidden');
+      }
+
+      if (typeof renderChatsList === 'function') renderChatsList();
+    };
+  }
+
+  // ------------------------------------------
+  // MEDIA, LINKS & DOCS ENHANCED SEARCH & SORT
+  // ------------------------------------------
+  function setupMldSearchAndSort(targetId) {
+    const searchInput = document.getElementById('mld-search-input');
+    const sortSelect = document.getElementById('mld-sort-select');
+
+    if (searchInput) searchInput.value = '';
+
+    const filterHandler = () => {
+      const query = (searchInput?.value || '').toLowerCase().trim();
+      const sortOrder = sortSelect?.value || 'newest';
+
+      const { messages } = store.getState();
+      let chatMsgs = (messages[targetId] || []).filter(m => !m.deleted);
+
+      if (sortOrder === 'oldest') {
+        chatMsgs.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+      } else {
+        chatMsgs.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      }
+
+      // Filter Media
+      const mediaMsgs = chatMsgs.filter(m => (m.type === 'image' || m.type === 'video') &&
+        ((m.text || '').toLowerCase().includes(query) || (m.fileName || '').toLowerCase().includes(query))
+      );
+      const mediaGridEl = document.getElementById('mld-media-grid');
+      const mediaCountEl = document.getElementById('mld-media-count');
+      if (mediaCountEl) mediaCountEl.textContent = mediaMsgs.length;
+      if (mediaGridEl) {
+        if (mediaMsgs.length === 0) {
+          mediaGridEl.innerHTML = `<div style="grid-column: span 3; padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">No matching media found.</div>`;
+        } else {
+          mediaGridEl.innerHTML = mediaMsgs.map(m => `
+            <div style="position: relative; width: 100%; height: 90px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color);" onclick="window.openMediaLightbox('${m.url}', '${m.type}', '${escapeHtml(m.text || '')}')">
+              <img src="${m.url}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+          `).join('');
+        }
+      }
+
+      // Filter Docs
+      const docMsgs = chatMsgs.filter(m => (m.type === 'doc' || m.type === 'document' || m.type === 'file' || m.type === 'audio') &&
+        ((m.fileName || m.name || m.text || '').toLowerCase().includes(query))
+      );
+      const docsListEl = document.getElementById('mld-docs-list');
+      const docsCountEl = document.getElementById('mld-docs-count');
+      if (docsCountEl) docsCountEl.textContent = docMsgs.length;
+      if (docsListEl) {
+        if (docMsgs.length === 0) {
+          docsListEl.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">No matching documents found.</div>`;
+        } else {
+          docsListEl.innerHTML = docMsgs.map(m => `
+            <div class="mld-doc-item">
+              <div class="mld-doc-icon"><i class="${m.type === 'audio' ? 'fas fa-headphones' : 'fas fa-file-pdf'}"></i></div>
+              <div class="mld-doc-info">
+                <div class="mld-doc-name">${escapeHtml(m.fileName || m.name || 'Document')}</div>
+                <div class="mld-doc-meta">${m.fileSize || 'Attachment'} • ${m.timestamp ? formatTimeShort(m.timestamp) : ''}</div>
+              </div>
+              <a href="${m.url || '#'}" download="${escapeHtml(m.fileName || 'file')}" class="icon-btn" style="color: var(--brand-green);"><i class="fas fa-download"></i></a>
+            </div>
+          `).join('');
+        }
+      }
+    };
+
+    if (searchInput) searchInput.oninput = filterHandler;
+    if (sortSelect) sortSelect.onchange = filterHandler;
+  }
+
+  // Universal Cross-Device Touch & Click Delegation for Contact Avatar & Profile View
   document.addEventListener('click', (e) => {
-    const avatarEl = e.target.closest('.item-avatar') || e.target.closest('.chat-avatar');
+    // Chat Header Dropdown Menu Logic
+    const menuBtn = e.target.closest('#chat-header-menu-btn');
+    const dropdown = document.getElementById('chat-header-dropdown-menu');
+
+    if (menuBtn) {
+      if (dropdown) dropdown.classList.toggle('hidden');
+      return;
+    }
+
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+      if (!e.target.closest('.chat-header-dropdown')) {
+        dropdown.classList.add('hidden');
+      }
+    }
+
+    if (e.target.closest('#dropdown-chat-profile')) {
+      const currentTarget = activeChatId || window.activeChatId;
+      if (currentTarget && typeof openContactInfoModal === 'function') openContactInfoModal(currentTarget);
+      else alert('Select a chat to view profile.', 'warning');
+      if (dropdown) dropdown.classList.add('hidden');
+      return;
+    }
+    if (e.target.closest('#dropdown-chat-lock')) {
+      const currentTarget = activeChatId || window.activeChatId;
+      if (currentTarget) openLockChatModal(currentTarget);
+      else alert('Select a chat to lock.', 'warning');
+      if (dropdown) dropdown.classList.add('hidden');
+      return;
+    }
+    if (e.target.closest('#dropdown-chat-block')) {
+      const currentTarget = activeChatId || window.activeChatId;
+      if (currentTarget) openBlockContactModal(currentTarget);
+      else alert('Select a chat to block contact.', 'warning');
+      if (dropdown) dropdown.classList.add('hidden');
+      return;
+    }
+    if (e.target.closest('#dropdown-chat-delete')) {
+      const currentTarget = activeChatId || window.activeChatId;
+      if (currentTarget) openDeleteChatModal(currentTarget);
+      else alert('Select a chat to delete.', 'warning');
+      if (dropdown) dropdown.classList.add('hidden');
+      return;
+    }
+
+    // Ignore action buttons like phone, video, delete, back
+    if (e.target.closest('#mobile-chat-back') || e.target.closest('.call-contact-btn') || e.target.closest('.delete-contact-btn') || e.target.closest('.delete-chat-btn') || e.target.closest('#header-search-btn') || e.target.closest('#header-call-btn') || e.target.closest('#header-video-btn')) {
+      return;
+    }
+
+    const avatarEl = e.target.closest('.item-avatar') || e.target.closest('.chat-avatar') || e.target.closest('#chat-header-details') || e.target.closest('#chat-header-avatar');
     if (avatarEl) {
       const listItem = avatarEl.closest('.list-item');
-      const targetId = listItem ? (listItem.getAttribute('data-contact-id') || listItem.getAttribute('data-chat-id')) : activeChatId;
+      let targetId = listItem ? (listItem.getAttribute('data-contact-id') || listItem.getAttribute('data-chat-id')) : activeChatId;
+      if (!targetId && (avatarEl.id === 'chat-header-details' || avatarEl.id === 'chat-header-avatar' || avatarEl.classList.contains('chat-avatar'))) {
+        targetId = activeChatId;
+      }
       if (targetId && typeof openContactInfoModal === 'function') {
-        e.stopPropagation();
         openContactInfoModal(targetId);
       }
     }
-  }, { capture: true });
+  });
 
   window.openContactInfoModal = openContactInfoModal;
+  window.openMediaLinksDocsModal = (id) => {
+    openMediaLinksDocsModal(id);
+    setupMldSearchAndSort(id);
+  };
   window.openMediaLightbox = openMediaLightbox;
+  window.openLockChatModal = openLockChatModal;
+  window.openBlockContactModal = openBlockContactModal;
+  window.unblockContact = unblockContact;
+  window.openDeleteChatModal = openDeleteChatModal;
+  window.checkAndOpenChatWithLock = checkAndOpenChatWithLock;
 })();

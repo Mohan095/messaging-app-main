@@ -67,7 +67,10 @@ const DEFAULT_INITIAL_STATE = {
   ],
   messages: {},
   reports: [],
-  suspendedUsers: []
+  suspendedUsers: [],
+  lockedChats: {},
+  blockedUsers: [],
+  deletedChats: []
 };
 
 class DataStore {
