@@ -5,12 +5,13 @@
 // Standard Firebase Configuration Placeholder
 // Fill in your project keys here to connect to live Firebase services
 export const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyBHrCqx1FFnYw52Py4ZIicn5Pg_yxXeKjo",
+  authDomain: "chat-mk-f1fc4.firebaseapp.com",
+  projectId: "chat-mk-f1fc4",
+  storageBucket: "chat-mk-f1fc4.firebasestorage.app",
+  messagingSenderId: "561728667110",
+  appId: "1:561728667110:web:2b6b05ad11b4826c63ea27",
+  measurementId: "G-4M56M2Q8LW"
 };
 
 export const isFirebaseConfigured = Boolean(
