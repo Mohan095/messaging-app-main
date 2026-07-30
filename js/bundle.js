@@ -144,120 +144,15 @@
     }
   }
 
-  function formatBytes(bytes, decimals = 2) {
-    if (!bytes || bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-  }
-
-  function getDocIconClass(fileName) {
-    const ext = (fileName || '').toLowerCase().split('.').pop();
-    switch (ext) {
-      case 'pdf':
-        return 'fas fa-file-pdf';
-      case 'doc':
-      case 'docx':
-        return 'fas fa-file-word';
-      case 'xls':
-      case 'xlsx':
-        return 'fas fa-file-excel';
-      case 'ppt':
-      case 'pptx':
-        return 'fas fa-file-powerpoint';
-      case 'zip':
-      case 'rar':
-      case '7z':
-        return 'fas fa-file-archive';
-      case 'txt':
-        return 'fas fa-file-alt';
-      default:
-        return 'fas fa-file-alt';
-    }
-  }
-
-  function validateMediaFile(file) {
-    if (!file) return { valid: false, error: 'No file selected.' };
-
-    const fileName = (file.name || '').toLowerCase();
-    const ext = fileName.includes('.') ? fileName.split('.').pop() : '';
-    const mime = (file.type || '').toLowerCase();
-
-    const allowedImages = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    const allowedVideos = ['mp4', 'webm', 'mov', 'avi'];
-    const allowedAudio = ['mp3', 'wav', 'ogg', 'm4a'];
-    const allowedDocs = ['pdf', 'docx', 'doc', 'txt', 'xlsx', 'pptx', 'zip'];
-
-    let fileType = null;
-    if (allowedImages.includes(ext) || mime.startsWith('image/')) {
-      fileType = 'image';
-    } else if (allowedVideos.includes(ext) || mime.startsWith('video/')) {
-      fileType = 'video';
-    } else if (allowedAudio.includes(ext) || mime.startsWith('audio/')) {
-      fileType = 'audio';
-    } else if (allowedDocs.includes(ext) || mime.includes('pdf') || mime.includes('document') || mime.includes('sheet') || mime.includes('presentation') || mime.includes('zip') || mime.includes('text/plain')) {
-      fileType = 'document';
-    }
-
-    if (!fileType) {
-      return {
-        valid: false,
-        error: `Unsupported file format (.${ext || 'unknown'}). Allowed: Images (jpg, jpeg, png, gif, webp), Videos (mp4, webm, mov, avi), Audio (mp3, wav, ogg, m4a), Docs (pdf, docx, doc, txt, xlsx, pptx, zip).`
-      };
-    }
-
-    return { valid: true, fileType, ext };
-  }
-
-  async function uploadFileToStorage(file, folder = "uploads", onProgress = null) {
-    if (!file) throw new Error("No file provided");
-    if (typeof firebase !== 'undefined' && firebase.storage && firebase.apps.length) {
-      try {
-        const storageRef = firebase.storage().ref();
-        const cleanName = (file.name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
-        const fileRef = storageRef.child(`${folder}/${Date.now()}_${cleanName}`);
-        const uploadTask = fileRef.put(file);
-
-        return new Promise((resolve, reject) => {
-          uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / (snapshot.totalBytes || 1)) * 100;
-              if (typeof onProgress === 'function') {
-                onProgress(progress);
-              }
-            },
-            (error) => {
-              console.warn("Firebase Storage upload notice, fallback to DataURL:", error.message);
-              const reader = new FileReader();
-              reader.onload = (e) => resolve(e.target.result);
-              reader.onerror = (err) => reject(err);
-              reader.readAsDataURL(file);
-            },
-            async () => {
-              try {
-                const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                resolve(downloadURL);
-              } catch (err) {
-                reject(err);
-              }
-            }
-          );
-        });
-      } catch (err) {
-        console.warn("Firebase Storage upload notice, using DataURL fallback:", err.message);
-      }
-    }
+  async function uploadFileToStorage(file, folder = "uploads") {
     return new Promise((resolve, reject) => {
+      if (!file) return reject(new Error("No file provided"));
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target.result);
       reader.onerror = (err) => reject(err);
       reader.readAsDataURL(file);
     });
   }
-
 
   function syncUserDataToFirebase(user) {
     if (!user || !user.uid) return;
@@ -2146,105 +2041,6 @@
   let voiceTimerInterval = null;
   let voiceSeconds = 0;
 
-  async function startVoiceRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunks.push(e.data);
-      };
-      mediaRecorder.start();
-
-      voiceSeconds = 0;
-      const timerEl = document.getElementById('voice-timer');
-      const recorderBar = document.getElementById('voice-recorder-bar');
-      const inputBar = document.getElementById('chat-input-bar');
-
-      if (recorderBar) recorderBar.classList.remove('hidden');
-      if (inputBar) inputBar.classList.add('hidden');
-      if (timerEl) timerEl.textContent = '00:00';
-
-      clearInterval(voiceTimerInterval);
-      voiceTimerInterval = setInterval(() => {
-        voiceSeconds++;
-        const mins = String(Math.floor(voiceSeconds / 60)).padStart(2, '0');
-        const secs = String(voiceSeconds % 60).padStart(2, '0');
-        if (timerEl) timerEl.textContent = `${mins}:${secs}`;
-      }, 1000);
-
-      showToastAlert('Voice recording started...', 'info', 2000);
-    } catch (err) {
-      console.warn('Microphone access error:', err);
-      showToastAlert('Microphone permission denied or audio device not available.', 'error');
-    }
-  }
-
-  function cancelVoiceRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-    }
-    clearInterval(voiceTimerInterval);
-    audioChunks = [];
-
-    const recorderBar = document.getElementById('voice-recorder-bar');
-    const inputBar = document.getElementById('chat-input-bar');
-    if (recorderBar) recorderBar.classList.add('hidden');
-    if (inputBar) inputBar.classList.remove('hidden');
-
-    showToastAlert('Voice note cancelled.', 'info');
-  }
-
-  function stopAndSendVoiceRecording() {
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
-
-    mediaRecorder.onstop = async () => {
-      clearInterval(voiceTimerInterval);
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      const audioFile = new File([audioBlob], `voice_note_${Date.now()}.webm`, { type: 'audio/webm' });
-
-      const recorderBar = document.getElementById('voice-recorder-bar');
-      const inputBar = document.getElementById('chat-input-bar');
-      if (recorderBar) recorderBar.classList.add('hidden');
-      if (inputBar) inputBar.classList.remove('hidden');
-
-      if (!activeChatId) {
-        showToastAlert('No active chat selected.', 'warning');
-        return;
-      }
-
-      showToastAlert('Uploading voice note...', 'info', 3000);
-      try {
-        const url = await uploadFileToStorage(audioFile, 'audio', (progress) => {
-          showToastAlert(`Uploading voice note: ${Math.round(progress)}%`, 'info', 1500);
-        });
-        const currentUser = store.getState().currentUser;
-
-        sendMessage({
-          type: 'audio',
-          url: url,
-          downloadURL: url,
-          fileName: `Voice Note (${voiceSeconds}s)`,
-          fileSize: formatBytes(audioBlob.size),
-          fileType: 'audio/webm',
-          duration: voiceSeconds,
-          uploadedBy: currentUser ? currentUser.uid : '',
-          uploadedAt: new Date().toISOString(),
-          chatId: activeChatId
-        });
-        showToastAlert('Voice note sent! 🎙️', 'success');
-      } catch (err) {
-        console.error('Failed to upload voice note:', err);
-        showToastAlert('Failed to send voice note.', 'error');
-      }
-    };
-
-    mediaRecorder.stop();
-  }
-
   function initChatEngine() {
     const messageInput = document.getElementById('chat-message-input');
     const sendBtn = document.getElementById('send-message-btn');
@@ -2295,72 +2091,35 @@
       });
     }
 
-    const imgAccepts = 'image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp';
-    const videoAccepts = 'video/mp4,video/webm,video/quicktime,video/x-msvideo,.mp4,.webm,.mov,.avi';
-    const audioAccepts = 'audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/m4a,audio/x-m4a,audio/mp4,.mp3,.wav,.ogg,.m4a';
-    const docAccepts = '.pdf,.doc,.docx,.txt,.xlsx,.pptx,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/zip,application/x-zip-compressed';
-
-    document.getElementById('attach-image-btn')?.addEventListener('click', () => triggerFileInput(imgAccepts));
-    document.getElementById('attach-video-btn')?.addEventListener('click', () => triggerFileInput(videoAccepts));
-    document.getElementById('attach-audio-btn')?.addEventListener('click', () => triggerFileInput(audioAccepts));
-    document.getElementById('attach-doc-btn')?.addEventListener('click', () => triggerFileInput(docAccepts));
+    document.getElementById('attach-image-btn')?.addEventListener('click', () => triggerFileInput('image/*'));
+    document.getElementById('attach-video-btn')?.addEventListener('click', () => triggerFileInput('video/*'));
+    document.getElementById('attach-audio-btn')?.addEventListener('click', () => triggerFileInput('audio/*'));
+    document.getElementById('attach-doc-btn')?.addEventListener('click', () => triggerFileInput('.pdf,.doc,.docx,.txt'));
 
     const hiddenFileInput = document.getElementById('hidden-chat-file-input');
     if (hiddenFileInput) {
       hiddenFileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (file && activeChatId) {
+          try {
+            const url = await uploadFileToStorage(file);
+            let type = 'document';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('video/')) type = 'video';
+            else if (file.type.startsWith('audio/')) type = 'audio';
 
-        if (!activeChatId) {
-          showToastAlert('Please select a contact or conversation first.', 'warning');
-          hiddenFileInput.value = '';
-          return;
-        }
-
-        const validation = validateMediaFile(file);
-        if (!validation.valid) {
-          showToastAlert(validation.error, 'error', 5000);
-          hiddenFileInput.value = '';
-          return;
-        }
-
-        const fileType = validation.fileType;
-        const formattedSize = formatBytes(file.size);
-        const currentUser = store.getState().currentUser;
-
-        showToastAlert(`Uploading ${file.name} (${formattedSize})...`, 'info', 3000);
-
-        try {
-          const folder = fileType === 'image' ? 'images' : (fileType === 'video' ? 'videos' : (fileType === 'audio' ? 'audio' : 'documents'));
-          const downloadURL = await uploadFileToStorage(file, folder, (progress) => {
-            showToastAlert(`Uploading ${file.name}: ${Math.round(progress)}%`, 'info', 1500);
-          });
-
-          const msgPayload = {
-            type: fileType,
-            url: downloadURL,
-            downloadURL: downloadURL,
-            text: file.name,
-            fileName: file.name,
-            fileType: file.type || fileType,
-            fileSize: formattedSize,
-            rawSize: file.size,
-            uploadedBy: currentUser ? currentUser.uid : '',
-            uploadedAt: new Date().toISOString(),
-            chatId: activeChatId
-          };
-
-          sendMessage(msgPayload);
-          showToastAlert(`${fileType.toUpperCase()} uploaded & sent! 🚀`, 'success');
-        } catch (err) {
-          console.error('File upload error:', err);
-          showToastAlert(`Failed to upload ${file.name}. Please check connection.`, 'error');
-        } finally {
-          hiddenFileInput.value = '';
+            sendMessage({
+              type,
+              url,
+              text: file.name,
+              fileName: file.name
+            });
+          } catch (err) {
+            alert('Failed to send file.');
+          }
         }
       });
     }
-
 
     if (voiceRecordBtn) {
       voiceRecordBtn.addEventListener('click', startVoiceRecording);
@@ -2615,7 +2374,7 @@
       const msgTime = new Date(msg.timestamp).getTime();
       const secondsDiff = Math.floor((now - msgTime) / 1000);
       const canEdit = isOut && (secondsDiff <= 15) && msg.type === 'text' && !msg.deleted;
-      const canDelete = isOut || msg.deleted;
+      const canDelete = isOut && !msg.deleted;
 
       let statusCheck = '<i class="fas fa-check message-status-icon"></i>';
       if (msg.status === 'delivered') statusCheck = '<i class="fas fa-check-double message-status-icon"></i>';
@@ -2623,73 +2382,45 @@
 
       let contentHtml = '';
       if (msg.deleted) {
-        contentHtml = `<div class="message-text deleted-msg-text" style="font-style: italic; opacity: 0.75; display: flex; align-items: center; justify-content: space-between; gap: 8px;"><span style="display: flex; align-items: center; gap: 6px;"><i class="fas fa-ban"></i> This message was deleted</span></div>`;
+        contentHtml = `<div class="message-text deleted-msg-text" style="font-style: italic; opacity: 0.7; display: flex; align-items: center; gap: 6px;"><i class="fas fa-ban"></i> This message was deleted</div>`;
       } else if (msg.type === 'text') {
         contentHtml = `<div class="message-text">${escapeHtml(msg.text)}</div>`;
       } else if (msg.type === 'image') {
-        const imgUrl = msg.downloadURL || msg.url;
-        const fileName = msg.fileName || 'image.jpg';
-        const fileSize = msg.fileSize || '';
-        const uploadDate = msg.timestamp ? new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
         contentHtml = `
-          <div class="message-media" style="position: relative; border-radius: 12px; overflow: hidden; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.12);">
-            <img src="${imgUrl}" alt="${escapeHtml(fileName)}" style="max-width: 280px; max-height: 260px; object-fit: cover; cursor: pointer; display: block; border-radius: 12px;" onclick="window.openMediaLightbox('${imgUrl}', 'image', '${escapeHtml(msg.text || 'Image')}', '${escapeHtml(fileName)}', '${uploadDate}')">
-            <button type="button" title="Download Image" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0, 0, 0, 0.75); color: #ffffff; width: 34px; height: 34px; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s, background 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.4);" onclick="event.stopPropagation(); window.downloadMediaFile('${imgUrl}', '${escapeHtml(fileName)}');">
-              <i class="fas fa-download" style="font-size: 14px;"></i>
-            </button>
+          <div class="message-media">
+            <img src="${msg.url}" alt="Image" style="cursor: pointer;" onclick="window.openMediaLightbox('${msg.url}', 'image', '${escapeHtml(msg.text || 'Image')}')">
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 11.5px;">
-            <span style="opacity: 0.85; font-weight: 500;">${escapeHtml(fileName)} ${fileSize ? `(${fileSize})` : ''}</span>
-            <button type="button" style="color: var(--brand-green); background: none; border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; text-decoration: underline;" onclick="event.stopPropagation(); window.downloadMediaFile('${imgUrl}', '${escapeHtml(fileName)}');">
-              <i class="fas fa-download"></i> Download
-            </button>
-          </div>
+          ${msg.text && msg.text !== msg.fileName ? `<div class="message-text" style="margin-top: 4px;">${escapeHtml(msg.text)}</div>` : ''}
         `;
       } else if (msg.type === 'video') {
-        const videoUrl = msg.downloadURL || msg.url;
-        const fileName = msg.fileName || 'video.mp4';
-        const fileSize = msg.fileSize || '';
         contentHtml = `
-          <div class="message-media" style="position: relative;">
-            <video src="${videoUrl}" controls style="max-width: 280px; max-height: 220px; border-radius: 10px; cursor: pointer; display: block; background: #000;" onclick="window.openMediaLightbox('${videoUrl}', 'video', '${escapeHtml(msg.text || 'Video')}', '${escapeHtml(fileName)}')"></video>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12px;">
-              <span style="opacity: 0.8; font-size: 11.5px;">${escapeHtml(fileName)} ${fileSize ? `(${fileSize})` : ''}</span>
-              <a href="${videoUrl}" download="${escapeHtml(fileName)}" target="_blank" style="color: var(--brand-green); text-decoration: underline; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" onclick="event.stopPropagation();">
-                <i class="fas fa-download"></i> Download
-              </a>
-            </div>
+          <div class="message-media">
+            <video src="${msg.url}" controls style="cursor: pointer;" onclick="window.openMediaLightbox('${msg.url}', 'video', '${escapeHtml(msg.text || 'Video')}')"></video>
           </div>
+          ${msg.text && msg.text !== msg.fileName ? `<div class="message-text" style="margin-top: 4px;">${escapeHtml(msg.text)}</div>` : ''}
         `;
       } else if (msg.type === 'audio') {
-        const audioUrl = msg.downloadURL || msg.url;
-        const fileName = msg.fileName || 'Audio File';
         contentHtml = `
-          <div class="audio-player-bubble" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(0,0,0,0.05); border-radius: 12px; border: 1px solid var(--border-color);">
-            <i class="fas fa-headphones" style="font-size: 20px; color: var(--brand-green);"></i>
-            <div style="display: flex; flex-direction: column; gap: 2px;">
-              <span style="font-size: 12px; font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(fileName)}</span>
-              <audio src="${audioUrl}" controls style="max-width: 190px; height: 32px; outline: none;"></audio>
+          <div class="audio-player-bubble">
+            <button class="play-voice-btn"><i class="fas fa-play"></i></button>
+            <div class="audio-waveform-bar">
+              <span class="wave-bar active" style="height: 12px;"></span>
+              <span class="wave-bar active" style="height: 20px;"></span>
+              <span class="wave-bar active" style="height: 14px;"></span>
+              <span class="wave-bar" style="height: 18px;"></span>
+              <span class="wave-bar" style="height: 10px;"></span>
             </div>
-            <a href="${audioUrl}" download="${escapeHtml(fileName)}" target="_blank" class="icon-btn" title="Download Audio" style="color: var(--brand-green); text-decoration: none; padding: 6px;" onclick="event.stopPropagation();">
-              <i class="fas fa-download" style="font-size: 16px;"></i>
-            </a>
+            <audio src="${msg.url}" controls style="width: 140px; height: 32px;"></audio>
           </div>
         `;
-      } else if (msg.type === 'document' || msg.type === 'doc') {
-        const docUrl = msg.downloadURL || msg.url;
-        const iconClass = getDocIconClass(msg.fileName || msg.text);
-        const docSize = msg.fileSize || 'Document File';
-        const uploadDate = msg.timestamp ? new Date(msg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
+      } else if (msg.type === 'document') {
         contentHtml = `
-          <div class="document-box" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(0,0,0,0.04); border-radius: 12px; border: 1px solid var(--border-color); cursor: pointer;" onclick="window.open('${docUrl}', '_blank')">
-            <i class="${iconClass}" style="font-size: 28px; color: var(--brand-green);"></i>
-            <div class="document-info" style="flex: 1; overflow: hidden;">
-              <div class="document-name" style="font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(msg.fileName || msg.text || 'Document')}</div>
-              <div class="document-size" style="font-size: 11.5px; opacity: 0.7;">${escapeHtml(docSize)} ${uploadDate ? '• ' + uploadDate : ''}</div>
+          <div class="document-box" onclick="window.open('${msg.url}', '_blank')">
+            <i class="fas fa-file-pdf document-icon"></i>
+            <div class="document-info">
+              <span class="document-name">${escapeHtml(msg.fileName || 'Document')}</span>
+              <span class="document-size">Click to view file</span>
             </div>
-            <a href="${docUrl}" download="${escapeHtml(msg.fileName || 'document')}" target="_blank" class="icon-btn" title="Download File" style="color: var(--brand-green); text-decoration: none; padding: 6px;" onclick="event.stopPropagation();">
-              <i class="fas fa-download" style="font-size: 16px;"></i>
-            </a>
           </div>
         `;
       }
@@ -2706,7 +2437,7 @@
           ${(canEdit || canDelete) ? `
             <div class="message-actions-bar">
               ${canEdit ? `<button type="button" class="msg-action-btn edit-msg-btn" data-msg-id="${msg.id}" title="Edit message (15s limit remaining: ${15 - secondsDiff}s)"><i class="fas fa-pen"></i></button>` : ''}
-              ${canDelete ? `<button type="button" class="msg-action-btn delete-msg-btn" data-msg-id="${msg.id}" title="${msg.deleted ? 'Permanently remove deleted message' : 'Delete message'}"><i class="fas fa-trash-alt"></i></button>` : ''}
+              ${canDelete ? `<button type="button" class="msg-action-btn delete-msg-btn" data-msg-id="${msg.id}" title="Delete message"><i class="fas fa-trash-alt"></i></button>` : ''}
             </div>
           ` : ''}
         </div>
@@ -2789,54 +2520,25 @@
     const msgIndex = currentMsgs.findIndex(m => m.id === msgId);
     if (msgIndex === -1) return;
 
-    const targetMsg = currentMsgs[msgIndex];
-
-    if (targetMsg.deleted) {
-      if (confirm('Permanently remove this deleted message bubble?')) {
-        const updatedMsgs = currentMsgs.filter(m => m.id !== msgId);
-        store.updateState({
-          messages: {
-            ...messages,
-            [activeChatId]: updatedMsgs
-          }
-        });
-        if (db) {
-          db.collection('messages').doc(msgId).delete().catch(err => console.warn('Firestore message delete error:', err));
+    if (confirm('Are you sure you want to delete this message?')) {
+      const updatedMsgs = [...currentMsgs];
+      updatedMsgs[msgIndex] = {
+        ...updatedMsgs[msgIndex],
+        deleted: true,
+        text: 'This message was deleted'
+      };
+      store.updateState({
+        messages: {
+          ...messages,
+          [activeChatId]: updatedMsgs
         }
-        renderMessages();
-        if (typeof window.showToastAlert === 'function') {
-          window.showToastAlert('Deleted message bubble removed.', 'info');
-        }
-      }
-    } else {
-      if (confirm('Are you sure you want to delete this message?')) {
-        const updatedMsgs = [...currentMsgs];
-        updatedMsgs[msgIndex] = {
-          ...updatedMsgs[msgIndex],
-          deleted: true,
-          text: 'This message was deleted'
-        };
-        store.updateState({
-          messages: {
-            ...messages,
-            [activeChatId]: updatedMsgs
-          }
-        });
-        if (db) {
-          db.collection('messages').doc(msgId).set({
-            deleted: true,
-            text: 'This message was deleted',
-            updatedAt: new Date().toISOString()
-          }, { merge: true }).catch(err => console.warn('Firestore mark deleted error:', err));
-        }
-        renderMessages();
-        if (typeof window.showToastAlert === 'function') {
-          window.showToastAlert('Message deleted.', 'warning');
-        }
+      });
+      renderMessages();
+      if (typeof window.showToastAlert === 'function') {
+        window.showToastAlert('Message deleted.', 'warning');
       }
     }
   }
-
 
   function sendCurrentMessage() {
     const input = document.getElementById('chat-message-input');
@@ -3488,39 +3190,20 @@
     modal.classList.remove('hidden');
   }
 
-  let currentZoom = 1;
-  function openMediaLightbox(url, type, caption = '', fileName = '', uploadDate = '') {
+  function openMediaLightbox(url, type, caption = '') {
     const modal = document.getElementById('media-lightbox-modal');
     if (!modal) return;
 
     const imgEl = document.getElementById('lightbox-img');
     const videoEl = document.getElementById('lightbox-video');
     const titleEl = document.getElementById('lightbox-title');
-    const metaEl = document.getElementById('lightbox-meta-info');
     const captionEl = document.getElementById('lightbox-caption');
     const downloadBtn = document.getElementById('lightbox-download-btn');
     const closeBtn = document.getElementById('close-lightbox-btn');
 
-    const zoomInBtn = document.getElementById('lightbox-zoom-in-btn');
-    const zoomOutBtn = document.getElementById('lightbox-zoom-out-btn');
-    const zoomResetBtn = document.getElementById('lightbox-zoom-reset-btn');
-
-    currentZoom = 1;
-    if (imgEl) imgEl.style.transform = `scale(1)`;
-
-    if (downloadBtn) {
-      downloadBtn.href = url;
-      if (fileName) downloadBtn.download = fileName;
-    }
+    if (downloadBtn) downloadBtn.href = url;
     if (captionEl) captionEl.textContent = caption || '';
     if (titleEl) titleEl.textContent = type === 'video' ? 'Video View' : 'Image View';
-
-    if (metaEl) {
-      const metaText = [];
-      if (fileName) metaText.push(fileName);
-      if (uploadDate) metaText.push(uploadDate);
-      metaEl.textContent = metaText.join(' • ');
-    }
 
     if (type === 'video') {
       if (imgEl) imgEl.classList.add('hidden');
@@ -3529,9 +3212,6 @@
         videoEl.classList.remove('hidden');
         videoEl.play().catch(() => {});
       }
-      if (zoomInBtn) zoomInBtn.style.display = 'none';
-      if (zoomOutBtn) zoomOutBtn.style.display = 'none';
-      if (zoomResetBtn) zoomResetBtn.style.display = 'none';
     } else {
       if (videoEl) {
         videoEl.pause();
@@ -3541,31 +3221,6 @@
         imgEl.src = url;
         imgEl.classList.remove('hidden');
       }
-      if (zoomInBtn) zoomInBtn.style.display = 'inline-flex';
-      if (zoomOutBtn) zoomOutBtn.style.display = 'inline-flex';
-      if (zoomResetBtn) zoomResetBtn.style.display = 'inline-flex';
-    }
-
-    if (zoomInBtn) {
-      zoomInBtn.onclick = () => {
-        currentZoom = Math.min(currentZoom + 0.25, 3.5);
-        if (imgEl) imgEl.style.transform = `scale(${currentZoom})`;
-        if (zoomResetBtn) zoomResetBtn.textContent = `${Math.round(currentZoom * 100)}%`;
-      };
-    }
-    if (zoomOutBtn) {
-      zoomOutBtn.onclick = () => {
-        currentZoom = Math.max(currentZoom - 0.25, 0.5);
-        if (imgEl) imgEl.style.transform = `scale(${currentZoom})`;
-        if (zoomResetBtn) zoomResetBtn.textContent = `${Math.round(currentZoom * 100)}%`;
-      };
-    }
-    if (zoomResetBtn) {
-      zoomResetBtn.onclick = () => {
-        currentZoom = 1;
-        if (imgEl) imgEl.style.transform = `scale(1)`;
-        zoomResetBtn.textContent = '100%';
-      };
     }
 
     if (closeBtn) {
@@ -3576,257 +3231,6 @@
     }
 
     modal.classList.remove('hidden');
-  }
-
-  function openMediaLinksDocsModal(targetId) {
-    const modal = document.getElementById('media-links-docs-modal');
-    if (!modal) return;
-
-    const { contacts, groups } = store.getState();
-    const contact = contacts.find(c => c.uid === targetId);
-    const group = groups.find(g => g.id === targetId);
-    const name = contact ? contact.name : (group ? group.name : 'Chat');
-
-    const titleEl = document.getElementById('media-docs-title');
-    if (titleEl) titleEl.textContent = `Media, Links & Docs - ${name}`;
-
-    // 5 Tab Elements
-    const tabImages = document.getElementById('mld-tab-images');
-    const tabVideos = document.getElementById('mld-tab-videos');
-    const tabAudio = document.getElementById('mld-tab-audio');
-    const tabDocs = document.getElementById('mld-tab-docs');
-    const tabLinks = document.getElementById('mld-tab-links');
-
-    const contentImages = document.getElementById('mld-content-images');
-    const contentVideos = document.getElementById('mld-content-videos');
-    const contentAudio = document.getElementById('mld-content-audio');
-    const contentDocs = document.getElementById('mld-content-docs');
-    const contentLinks = document.getElementById('mld-content-links');
-
-    function switchMldTab(activeTab) {
-      [tabImages, tabVideos, tabAudio, tabDocs, tabLinks].forEach(b => b?.classList.remove('active'));
-      [contentImages, contentVideos, contentAudio, contentDocs, contentLinks].forEach(c => c?.classList.add('hidden'));
-
-      if (activeTab === 'images') {
-        tabImages?.classList.add('active');
-        contentImages?.classList.remove('hidden');
-      } else if (activeTab === 'videos') {
-        tabVideos?.classList.add('active');
-        contentVideos?.classList.remove('hidden');
-      } else if (activeTab === 'audio') {
-        tabAudio?.classList.add('active');
-        contentAudio?.classList.remove('hidden');
-      } else if (activeTab === 'docs') {
-        tabDocs?.classList.add('active');
-        contentDocs?.classList.remove('hidden');
-      } else if (activeTab === 'links') {
-        tabLinks?.classList.add('active');
-        contentLinks?.classList.remove('hidden');
-      }
-    }
-
-    if (tabImages) tabImages.onclick = () => switchMldTab('images');
-    if (tabVideos) tabVideos.onclick = () => switchMldTab('videos');
-    if (tabAudio) tabAudio.onclick = () => switchMldTab('audio');
-    if (tabDocs) tabDocs.onclick = () => switchMldTab('docs');
-    if (tabLinks) tabLinks.onclick = () => switchMldTab('links');
-
-    const closeBtn = document.getElementById('close-media-docs-modal');
-    if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
-
-    switchMldTab('images');
-    setupMldSearchAndSort(targetId);
-    modal.classList.remove('hidden');
-  }
-
-  function deleteMediaFile(msgId, chatId) {
-    if (!msgId || !confirm('Are you sure you want to delete this file?')) return;
-    const { messages, currentUser } = store.getState();
-    const chatMsgs = messages[chatId] || [];
-    const updatedMsgs = chatMsgs.filter(m => m.id !== msgId);
-    store.updateState(s => ({
-      ...s,
-      messages: { ...s.messages, [chatId]: updatedMsgs }
-    }));
-
-    if (db && currentUser) {
-      db.collection('messages').doc(msgId).delete()
-        .then(() => showToastAlert('File deleted from cloud! 🗑️', 'info'))
-        .catch(err => console.warn('Firestore delete error:', err));
-    }
-    setupMldSearchAndSort(chatId);
-    if (typeof renderMessages === 'function') renderMessages();
-  }
-
-  function setupMldSearchAndSort(targetId) {
-    const searchInput = document.getElementById('mld-search-input');
-    const sortSelect = document.getElementById('mld-sort-select');
-
-    const filterHandler = () => {
-      const query = (searchInput?.value || '').toLowerCase().trim();
-      const sortOrder = sortSelect?.value || 'newest';
-
-      const { messages } = store.getState();
-      let chatMsgs = (messages[targetId] || []).filter(m => !m.deleted);
-
-      if (sortOrder === 'oldest') {
-        chatMsgs.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-      } else {
-        chatMsgs.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-      }
-
-      // 1. Images
-      const imgMsgs = chatMsgs.filter(m => m.type === 'image' &&
-        ((m.text || '').toLowerCase().includes(query) || (m.fileName || '').toLowerCase().includes(query))
-      );
-      const imgGridEl = document.getElementById('mld-images-grid');
-      const imgCountEl = document.getElementById('mld-images-count');
-      if (imgCountEl) imgCountEl.textContent = imgMsgs.length;
-      if (imgGridEl) {
-        if (imgMsgs.length === 0) {
-          imgGridEl.innerHTML = `<div style="grid-column: span 3; padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">No images found.</div>`;
-        } else {
-          imgGridEl.innerHTML = imgMsgs.map(m => `
-            <div style="position: relative; width: 100%; height: 95px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color);">
-              <img src="${m.downloadURL || m.url}" style="width: 100%; height: 100%; object-fit: cover;" onclick="window.openMediaLightbox('${m.downloadURL || m.url}', 'image', '${escapeHtml(m.text || '')}', '${escapeHtml(m.fileName || 'Image')}')">
-              <button title="Delete Image" style="position: absolute; top: 4px; right: 4px; background: rgba(239,68,68,0.85); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; cursor: pointer;" onclick="window.deleteMediaFile('${m.id}', '${targetId}')"><i class="fas fa-trash"></i></button>
-            </div>
-          `).join('');
-        }
-      }
-
-      // 2. Videos
-      const videoMsgs = chatMsgs.filter(m => m.type === 'video' &&
-        ((m.text || '').toLowerCase().includes(query) || (m.fileName || '').toLowerCase().includes(query))
-      );
-      const videoGridEl = document.getElementById('mld-videos-grid');
-      const videoCountEl = document.getElementById('mld-videos-count');
-      if (videoCountEl) videoCountEl.textContent = videoMsgs.length;
-      if (videoGridEl) {
-        if (videoMsgs.length === 0) {
-          videoGridEl.innerHTML = `<div style="grid-column: span 2; padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">No videos found.</div>`;
-        } else {
-          videoGridEl.innerHTML = videoMsgs.map(m => `
-            <div style="position: relative; width: 100%; height: 110px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: #000;">
-              <video src="${m.downloadURL || m.url}" style="width: 100%; height: 100%; object-fit: cover;" onclick="window.openMediaLightbox('${m.downloadURL || m.url}', 'video', '${escapeHtml(m.text || '')}', '${escapeHtml(m.fileName || 'Video')}')"></video>
-              <button title="Delete Video" style="position: absolute; top: 4px; right: 4px; background: rgba(239,68,68,0.85); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; cursor: pointer; z-index: 5;" onclick="window.deleteMediaFile('${m.id}', '${targetId}')"><i class="fas fa-trash"></i></button>
-            </div>
-          `).join('');
-        }
-      }
-
-      // 3. Audio
-      const audioMsgs = chatMsgs.filter(m => m.type === 'audio' &&
-        ((m.fileName || m.name || m.text || '').toLowerCase().includes(query))
-      );
-      const audioListEl = document.getElementById('mld-audio-list');
-      const audioCountEl = document.getElementById('mld-audio-count');
-      if (audioCountEl) audioCountEl.textContent = audioMsgs.length;
-      if (audioListEl) {
-        if (audioMsgs.length === 0) {
-          audioListEl.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">No audio files found.</div>`;
-        } else {
-          audioListEl.innerHTML = audioMsgs.map(m => `
-            <div class="mld-doc-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-panel); border-radius: 10px; border: 1px solid var(--border-color);">
-              <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                <i class="fas fa-headphones" style="font-size: 20px; color: var(--brand-green);"></i>
-                <div>
-                  <div style="font-weight: 600; font-size: 13px;">${escapeHtml(m.fileName || 'Audio')}</div>
-                  <div style="font-size: 11px; opacity: 0.7;">${m.fileSize || ''} • ${m.timestamp ? formatTimeShort(m.timestamp) : ''}</div>
-                </div>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <audio src="${m.downloadURL || m.url}" controls style="max-width: 140px; height: 32px;"></audio>
-                <a href="${m.downloadURL || m.url}" download="${escapeHtml(m.fileName || 'audio')}" target="_blank" class="icon-btn" style="color: var(--brand-green);"><i class="fas fa-download"></i></a>
-                <button title="Delete File" class="icon-btn" style="color: #ef4444;" onclick="window.deleteMediaFile('${m.id}', '${targetId}')"><i class="fas fa-trash"></i></button>
-              </div>
-            </div>
-          `).join('');
-        }
-      }
-
-      // 4. Docs
-      const docMsgs = chatMsgs.filter(m => (m.type === 'doc' || m.type === 'document' || m.type === 'file') &&
-        ((m.fileName || m.name || m.text || '').toLowerCase().includes(query))
-      );
-      const docsListEl = document.getElementById('mld-docs-list');
-      const docsCountEl = document.getElementById('mld-docs-count');
-      if (docsCountEl) docsCountEl.textContent = docMsgs.length;
-      if (docsListEl) {
-        if (docMsgs.length === 0) {
-          docsListEl.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">No documents found.</div>`;
-        } else {
-          docsListEl.innerHTML = docMsgs.map(m => {
-            const fileName = m.fileName || m.name || m.text || 'File';
-            const iconClass = getDocIconClass(fileName);
-            const fileUrl = m.downloadURL || m.url || '#';
-            return `
-              <div class="mld-doc-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-panel); border-radius: 10px; border: 1px solid var(--border-color);">
-                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                  <i class="${iconClass}" style="font-size: 24px; color: var(--brand-green);"></i>
-                  <div>
-                    <div style="font-weight: 600; font-size: 13.5px;">${escapeHtml(fileName)}</div>
-                    <div style="font-size: 11.5px; opacity: 0.7;">${m.fileSize || 'Attachment'} • ${m.timestamp ? formatTimeShort(m.timestamp) : ''}</div>
-                  </div>
-                </div>
-                <div style="display: flex; gap: 6px;">
-                  <a href="${fileUrl}" download="${escapeHtml(fileName)}" target="_blank" class="icon-btn" style="color: var(--brand-green);" title="Download File"><i class="fas fa-download"></i></a>
-                  <button title="Delete File" class="icon-btn" style="color: #ef4444;" onclick="window.deleteMediaFile('${m.id}', '${targetId}')"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
-      // 5. Links
-      const urlRegex = /(https?:\/\/[^\s]+)/gi;
-      const linkItems = [];
-      chatMsgs.forEach(m => {
-        const textToSearch = (m.text || '') + ' ' + (m.caption || '');
-        const matches = textToSearch.match(urlRegex);
-        if (matches) {
-          matches.forEach(url => {
-            if (url.toLowerCase().includes(query)) {
-              linkItems.push({
-                url,
-                time: m.timestamp ? formatTimeShort(m.timestamp) : '',
-                sender: m.senderName || 'User'
-              });
-            }
-          });
-        }
-      });
-      const linksCountEl = document.getElementById('mld-links-count');
-      const linksListEl = document.getElementById('mld-links-list');
-      if (linksCountEl) linksCountEl.textContent = linkItems.length;
-      if (linksListEl) {
-        if (linkItems.length === 0) {
-          linksListEl.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">No shared links found.</div>`;
-        } else {
-          linksListEl.innerHTML = linkItems.map(item => {
-            let host = 'link';
-            try { host = new URL(item.url).hostname; } catch (e) {}
-            return `
-              <a class="mld-link-item" href="${item.url}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-panel); border-radius: 10px; border: 1px solid var(--border-color); text-decoration: none; color: inherit;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <i class="fas fa-globe" style="color: var(--brand-green); font-size: 20px;"></i>
-                  <div>
-                    <div style="font-weight: 600; font-size: 13px; word-break: break-all;">${escapeHtml(item.url)}</div>
-                    <div style="font-size: 11px; opacity: 0.7;">${host} • ${item.sender} ${item.time ? '• ' + item.time : ''}</div>
-                  </div>
-                </div>
-                <i class="fas fa-external-link-alt" style="color: var(--text-secondary); font-size: 13px;"></i>
-              </a>
-            `;
-          }).join('');
-        }
-      }
-    };
-
-    if (searchInput) searchInput.oninput = filterHandler;
-    if (sortSelect) sortSelect.onchange = filterHandler;
-    filterHandler();
   }
 
   // Universal Cross-Device Touch & Click Delegation for Contact Avatar Big View
@@ -3842,82 +3246,6 @@
     }
   }, { capture: true });
 
-  // ------------------------------------------
-  // WEBSITE LOADING ANIMATION SPLASH CONTROLLER
-  // ------------------------------------------
-  function initSplashScreenAnimation() {
-    const splash = document.getElementById('splash-screen');
-    if (!splash) return;
-
-    const fillBar = document.getElementById('splash-bar-fill');
-    const subText = document.getElementById('splash-sub-text');
-
-    const steps = [
-      { progress: 30, text: "Initializing Cloud Security..." },
-      { progress: 65, text: "Syncing End-to-End Encryption..." },
-      { progress: 90, text: "Loading Secure Messages & Auth..." },
-      { progress: 100, text: "Welcome to MD Chat Pro!" }
-    ];
-
-    let currentStep = 0;
-    const interval = setInterval(() => {
-      if (currentStep < steps.length) {
-        const step = steps[currentStep];
-        if (fillBar) fillBar.style.width = step.progress + '%';
-        if (subText) subText.innerHTML = `<i class="fas fa-shield-alt" style="color: #25d366;"></i> ${step.text}`;
-        currentStep++;
-      } else {
-        clearInterval(interval);
-        setTimeout(() => {
-          splash.classList.add('fade-out');
-          setTimeout(() => {
-            splash.style.display = 'none';
-          }, 650);
-        }, 350);
-      }
-    }, 320);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSplashScreenAnimation);
-  } else {
-    initSplashScreenAnimation();
-  }
-
-  async function downloadMediaFile(url, fileName) {
-    if (!url) return;
-    try {
-      if (typeof window.showToastAlert === 'function') {
-        window.showToastAlert(`Downloading ${fileName || 'file'}...`, 'info', 2000);
-      }
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = fileName || 'download';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      if (typeof window.showToastAlert === 'function') {
-        window.showToastAlert(`Downloaded ${fileName || 'file'} successfully! 📥`, 'success');
-      }
-    } catch (err) {
-      console.warn("Direct download notice, opening URL:", err);
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.download = fileName || 'download';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  }
-
-  window.downloadMediaFile = downloadMediaFile;
   window.openContactInfoModal = openContactInfoModal;
   window.openMediaLightbox = openMediaLightbox;
-  window.openMediaLinksDocsModal = openMediaLinksDocsModal;
-  window.deleteMediaFile = deleteMediaFile;
 })();

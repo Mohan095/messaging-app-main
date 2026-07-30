@@ -31,22 +31,17 @@
 <body>
 
   <!-- WEBSITE ENTER SPLASH SCREEN LOGO ANIMATION -->
-  <!-- WEBSITE ENTER SPLASH SCREEN LOGO ANIMATION -->
   <div id="splash-screen" class="splash-screen">
     <div class="splash-content">
-      <div class="splash-logo-wrapper">
-        <div class="splash-spinner-ring"></div>
-        <div class="splash-logo">
-          <i class="fas fa-comment-dots"></i>
-        </div>
+      <div class="splash-logo">
+        <i class="fas fa-comment-dots"></i>
       </div>
-      <h1 class="splash-title">MD Chat Pro</h1>
-      <p class="splash-subtitle" id="splash-sub-text"><i class="fas fa-shield-alt" style="color: #25d366;"></i> Connecting to Encrypted Cloud...</p>
       <div class="splash-progress-track">
-        <div class="splash-progress-fill" id="splash-bar-fill"></div>
+        <div class="splash-progress-fill"></div>
       </div>
+      <h2 class="splash-title">MD Chat Pro</h2>
       <div class="splash-security">
-        <i class="fas fa-lock"></i> End-to-End Encrypted Messaging
+        <i class="fas fa-lock"></i> End-to-end encrypted
       </div>
     </div>
   </div>
@@ -459,7 +454,7 @@
           </div>
         </div>
 
-        <input type="file" id="hidden-chat-file-input" class="hidden" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov,.avi,.mp3,.wav,.ogg,.m4a,.pdf,.doc,.docx,.txt,.xlsx,.pptx,.zip">
+        <input type="file" id="hidden-chat-file-input" class="hidden">
 
         <!-- Chat Input Footer -->
         <footer class="chat-input-container">
@@ -951,101 +946,25 @@
     </div>
   </div>
 
-  <!-- MODAL: MEDIA, LINKS & DOCS DEDICATED VIEW (5 TABS) -->
-  <div class="modal-overlay hidden" id="media-links-docs-modal" style="z-index: 10002;">
-    <div class="modal-content" style="max-width: 600px; width: 94%; border-top: 4px solid var(--brand-green); border-radius: 20px;">
-      <div class="modal-header" style="justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-folder-open" style="color: var(--brand-green); font-size: 18px;"></i>
-          <span style="font-weight: 600; font-size: 16px; color: var(--text-primary);" id="media-docs-title">Media, Links & Docs</span>
-        </div>
-        <button class="icon-btn" id="close-media-docs-modal" title="Close"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body" style="padding: 16px 18px 20px 18px; display: flex; flex-direction: column; gap: 14px;">
-        <!-- 5 Tab Switchers -->
-        <div class="status-tab-pills" style="display: flex; gap: 4px; background: var(--bg-panel); padding: 4px; border-radius: 12px; border: 1px solid var(--border-color); overflow-x: auto;">
-          <button type="button" class="status-tab-btn active" id="mld-tab-images" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 12px; white-space: nowrap;">
-            <i class="fas fa-image"></i> Images (<span id="mld-images-count">0</span>)
-          </button>
-          <button type="button" class="status-tab-btn" id="mld-tab-videos" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 12px; white-space: nowrap;">
-            <i class="fas fa-video"></i> Videos (<span id="mld-videos-count">0</span>)
-          </button>
-          <button type="button" class="status-tab-btn" id="mld-tab-audio" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 12px; white-space: nowrap;">
-            <i class="fas fa-headphones"></i> Audio (<span id="mld-audio-count">0</span>)
-          </button>
-          <button type="button" class="status-tab-btn" id="mld-tab-docs" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 12px; white-space: nowrap;">
-            <i class="fas fa-file-alt"></i> Docs (<span id="mld-docs-count">0</span>)
-          </button>
-          <button type="button" class="status-tab-btn" id="mld-tab-links" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 12px; white-space: nowrap;">
-            <i class="fas fa-link"></i> Links (<span id="mld-links-count">0</span>)
-          </button>
-        </div>
-
-        <!-- Search Bar & Sort Options -->
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <div class="search-input-wrapper" style="flex: 1;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="mld-search-input" placeholder="Search files..." style="font-size: 13px;">
-          </div>
-          <select id="mld-sort-select" class="form-control" style="width: 120px; font-size: 12px; padding: 8px;">
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-          </select>
-        </div>
-
-        <!-- Tab 1: Images Grid -->
-        <div id="mld-content-images" class="mld-tab-content">
-          <div id="mld-images-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;"></div>
-        </div>
-
-        <!-- Tab 2: Videos Grid -->
-        <div id="mld-content-videos" class="mld-tab-content hidden">
-          <div id="mld-videos-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;"></div>
-        </div>
-
-        <!-- Tab 3: Audio List -->
-        <div id="mld-content-audio" class="mld-tab-content hidden">
-          <div id="mld-audio-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;"></div>
-        </div>
-
-        <!-- Tab 4: Docs List -->
-        <div id="mld-content-docs" class="mld-tab-content hidden">
-          <div id="mld-docs-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;"></div>
-        </div>
-
-        <!-- Tab 5: Links List -->
-        <div id="mld-content-links" class="mld-tab-content hidden">
-          <div id="mld-links-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; padding: 4px;"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: MEDIA LIGHTBOX VIEWER (FULLSCREEN IMAGE & VIDEO VIEW WITH ZOOM) -->
+  <!-- MODAL: MEDIA LIGHTBOX VIEWER (FULLSCREEN IMAGE & VIDEO ONLY VIEW) -->
   <div class="modal-overlay hidden" id="media-lightbox-modal" style="z-index: 99999; background: rgba(0, 0, 0, 0.92);">
     <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
       
       <!-- Top Action Bar -->
       <div style="position: absolute; top: 16px; left: 20px; right: 20px; display: flex; align-items: center; justify-content: space-between; color: #fff; z-index: 10;">
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fas fa-photo-video" style="color: var(--brand-accent); font-size: 18px;"></i>
-            <span id="lightbox-title" style="font-weight: 600; font-size: 15px;">Media View</span>
-          </div>
-          <div id="lightbox-meta-info" style="font-size: 11.5px; opacity: 0.75; margin-left: 28px;"></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="fas fa-photo-video" style="color: var(--brand-accent); font-size: 18px;"></i>
+          <span id="lightbox-title" style="font-weight: 600; font-size: 15px;">Media View</span>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <button class="icon-btn" id="lightbox-zoom-in-btn" style="color: #fff;" title="Zoom In"><i class="fas fa-search-plus"></i></button>
-          <button class="icon-btn" id="lightbox-zoom-out-btn" style="color: #fff;" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
-          <button class="icon-btn" id="lightbox-zoom-reset-btn" style="color: #fff; font-size: 12px; font-weight: 600;" title="Reset Zoom">100%</button>
+        <div style="display: flex; gap: 12px; align-items: center;">
           <a id="lightbox-download-btn" href="" download class="icon-btn" style="color: #fff; text-decoration: none;" title="Download Media"><i class="fas fa-download"></i></a>
           <button class="icon-btn" id="close-lightbox-btn" style="color: #fff;" title="Close"><i class="fas fa-times fa-lg"></i></button>
         </div>
       </div>
 
       <!-- Media Display Area -->
-      <div style="max-width: 90vw; max-height: 82vh; display: flex; align-items: center; justify-content: center; margin-top: 40px; overflow: hidden;" id="lightbox-content-box">
-        <img id="lightbox-img" src="" class="hidden" style="max-width: 100%; max-height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 8px 32px rgba(0,0,0,0.6); transition: transform 0.2s ease;">
+      <div style="max-width: 90vw; max-height: 82vh; display: flex; align-items: center; justify-content: center; margin-top: 40px;" id="lightbox-content-box">
+        <img id="lightbox-img" src="" class="hidden" style="max-width: 100%; max-height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 8px 32px rgba(0,0,0,0.6);">
         <video id="lightbox-video" src="" controls class="hidden" style="max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);"></video>
       </div>
 
